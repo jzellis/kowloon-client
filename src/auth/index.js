@@ -1,0 +1,177 @@
+// Authentication module for Kowloon client
+
+import { getToken, setToken, removeToken } from '../utils/storage.js';
+import { AuthenticationError } from '../utils/errors.js';
+
+/**
+ * Authentication client
+ */
+export class AuthClient {
+  /**
+   * @param {HttpClient} http - HTTP client instance
+   * @param {Object} storage - Optional custom storage adapter
+   */
+  constructor(http, storage = null) {
+    this.http = http;
+    this.storage = storage;
+    this._user = null;
+    this._token = null;
+  }
+
+  /**
+   * Get current auth token
+   * @returns {Promise<string|null>}
+   */
+  async getToken() {
+    if (this._token) return this._token;
+    this._token = await getToken('kowloon_token', this.storage);
+    return this._token;
+  }
+
+  /**
+   * Get current user
+   * @returns {Object|null}
+   */
+  getUser() {
+    return this._user;
+  }
+
+  /**
+   * Check if user is authenticated
+   * @returns {Promise<boolean>}
+   */
+  async isAuthenticated() {
+    return !!(await this.getToken());
+  }
+
+  /**
+   * Register a new user
+   * @param {Object} credentials
+   * @param {string} credentials.username - Username
+   * @param {string} credentials.password - Password
+   * @param {string} [credentials.email] - Email (optional)
+   * @param {Object} [credentials.profile] - Profile data (optional)
+   * @returns {Promise<Object>} { user, token }
+   */
+  async register(credentials) {
+    const { username, password, email, profile } = credentials;
+
+    if (!username || !password) {
+      throw new AuthenticationError('Username and password are required');
+    }
+
+    const response = await this.http.post('/register', {
+      username,
+      password,
+      email,
+      profile,
+    });
+
+    if (!response.token) {
+      throw new AuthenticationError('Registration failed - no token received');
+    }
+
+    // Store token and user
+    this._token = response.token;
+    this._user = response.user;
+    await setToken(this._token, 'kowloon_token', this.storage);
+
+    return {
+      user: this._user,
+      token: this._token,
+    };
+  }
+
+  /**
+   * Login with username and password
+   * @param {Object} credentials
+   * @param {string} [credentials.username] - Username
+   * @param {string} [credentials.id] - User ID (@user@domain)
+   * @param {string} credentials.password - Password
+   * @returns {Promise<Object>} { user, token }
+   */
+  async login(credentials) {
+    const { username, id, password } = credentials;
+
+    if ((!username && !id) || !password) {
+      throw new AuthenticationError('Username/ID and password are required');
+    }
+
+    const response = await this.http.post('/auth/login', {
+      username,
+      id,
+      password,
+    });
+
+    if (!response.token) {
+      throw new AuthenticationError('Login failed - no token received');
+    }
+
+    // Store token and user
+    this._token = response.token;
+    this._user = response.user;
+    await setToken(this._token, 'kowloon_token', this.storage);
+
+    return {
+      user: this._user,
+      token: this._token,
+    };
+  }
+
+  /**
+   * Logout (clear token and user)
+   * @returns {Promise<void>}
+   */
+  async logout() {
+    this._token = null;
+    this._user = null;
+    await removeToken('kowloon_token', this.storage);
+  }
+
+  /**
+   * Restore session from stored token
+   * @returns {Promise<Object|null>} User object if session restored, null otherwise
+   */
+  async restoreSession() {
+    const token = await this.getToken();
+    if (!token) return null;
+
+    // TODO: Verify token is still valid by making a test API call
+    // For now, just decode the JWT payload (not verifying signature client-side)
+    try {
+      const payload = this._decodeToken(token);
+      this._user = payload.user || null;
+      return this._user;
+    } catch (e) {
+      // Invalid token, clear it
+      await this.logout();
+      return null;
+    }
+  }
+
+  /**
+   * Decode JWT token (client-side only, does NOT verify signature)
+   * @private
+   * @param {string} token - JWT token
+   * @returns {Object} Decoded payload
+   */
+  _decodeToken(token) {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) throw new Error('Invalid token format');
+
+      const payload = parts[1];
+      const decoded = JSON.parse(
+        Buffer.from ?
+          Buffer.from(payload, 'base64').toString('utf8') :
+          atob(payload) // Browser fallback
+      );
+
+      return decoded;
+    } catch (e) {
+      throw new AuthenticationError('Failed to decode token');
+    }
+  }
+}
+
+export default AuthClient;
