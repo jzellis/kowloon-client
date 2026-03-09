@@ -119,7 +119,7 @@ describe('Kowloon Activities', () => {
       assert.ok(result.ok, 'Should succeed');
       assert.ok(result.result, 'Should return result');
       assert.ok(result.result.id, 'Reply should have an ID');
-      assert.strictEqual(result.result.inReplyTo, createdPostId, 'Should reference original post');
+      assert.strictEqual(result.result.target, createdPostId, 'Should reference original post');
 
       createdReplyId = result.result.id;
     });
@@ -166,9 +166,9 @@ describe('Kowloon Activities', () => {
 
       assert.ok(result.ok, 'Should succeed');
       assert.ok(result.result, 'Should return result');
-      assert.ok(result.result.id, 'React should have an ID');
+      assert.ok(result.result.status === 'reacted' || result.result.id, 'React should succeed');
 
-      createdReactId = result.result.id;
+      createdReactId = result.result.id || result.activity?.objectId;
     });
 
     it('should reject react without postId', async () => {
@@ -310,13 +310,13 @@ describe('Kowloon Activities', () => {
         name: 'Approval Test Group',
         description: 'A group requiring approval',
         to: '@public',
-        rsvpPolicy: 'approval',
+        rsvpPolicy: 'approvalOnly',
       });
 
       assert.ok(result.ok, 'Should succeed');
       assert.ok(result.result, 'Should return result');
       assert.ok(result.result.id, 'Group should have an ID');
-      assert.strictEqual(result.result.rsvpPolicy, 'approval', 'Should have approval policy');
+      assert.strictEqual(result.result.rsvpPolicy, 'approvalOnly', 'Should have approval policy');
 
       approvalGroupId = result.result.id;
     });

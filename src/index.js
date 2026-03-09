@@ -46,7 +46,7 @@ export class KowloonClient {
     this.files = new FilesClient(this.http);
 
     // Activities client (posts, replies, reacts, circles, groups, bookmarks, pages, user actions)
-    this.activities = new ActivitiesClient(this.http, this.files);
+    this.activities = new ActivitiesClient(this.http, this.files, this.auth);
 
     // Feed client (content feeds, single object retrieval, collections)
     this.feeds = new FeedClient(this.http);

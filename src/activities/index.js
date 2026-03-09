@@ -11,9 +11,10 @@ export class ActivitiesClient {
    * @param {HttpClient} http - HTTP client instance
    * @param {FilesClient} files - Files client instance (for upload delegation)
    */
-  constructor(http, files) {
+  constructor(http, files, auth) {
     this.http = http;
     this.files = files;
+    this.auth = auth;
   }
 
   // ---- Posts ----
@@ -25,7 +26,7 @@ export class ActivitiesClient {
    * @param {string} options.to - Audience (@public, @domain, circle:id, group:id, or actorId)
    * @param {string} options.canReply - Who can reply
    * @param {string} options.canReact - Who can react
-   * @param {string} options.body - Post content
+   * @param {string} options.content - Post content
    * @param {string} [options.title] - Post title (for non-Note types)
    * @param {string[]} [options.tags] - Tags
    * @param {Object} [options.location] - GeoPoint object
@@ -36,13 +37,13 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async createPost(options) {
-    const { type = 'Note', to, canReply, canReact, body, title, tags, location, startTime, endTime, attachments, featuredImage } = options;
+    const { type = 'Note', to, canReply, canReact, content, title, tags, location, startTime, endTime, attachments, featuredImage } = options;
 
-    if (!body || typeof body !== 'string') {
-      throw new ValidationError('Post body is required');
+    if (!content || typeof content !== 'string') {
+      throw new ValidationError('content is required');
     }
 
-    const object = { type, content: body };
+    const object = { type, content };
     if (title && type !== 'Note') object.title = title;
     if (tags) object.tags = tags;
     if (location) object.location = location;
@@ -69,26 +70,26 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async updatePost(options) {
-    const { postId, ...updates } = options;
+    const { postId, updates } = options;
 
-    if (!postId) throw new ValidationError('postId is required to update post');
+    if (!postId) throw new ValidationError('postId is required');
 
+    const patch = updates || {};
     const object = {};
-    if (updates.body !== undefined) object.content = updates.body;
-    if (updates.title !== undefined) object.title = updates.title;
-    if (updates.tags !== undefined) object.tags = updates.tags;
-    if (updates.location !== undefined) object.location = updates.location;
-    if (updates.startTime !== undefined) object.startTime = updates.startTime;
-    if (updates.endTime !== undefined) object.endTime = updates.endTime;
-    if (updates.attachments !== undefined) object.attachments = updates.attachments;
-    if (updates.featuredImage !== undefined) object.featuredImage = updates.featuredImage;
+    if (patch.content !== undefined) object.source = { content: patch.content };
+    if (patch.title !== undefined) object.title = patch.title;
+    if (patch.tags !== undefined) object.tags = patch.tags;
+    if (patch.location !== undefined) object.location = patch.location;
+    if (patch.startTime !== undefined) object.startTime = patch.startTime;
+    if (patch.endTime !== undefined) object.endTime = patch.endTime;
+    if (patch.attachments !== undefined) object.attachments = patch.attachments;
+    if (patch.featuredImage !== undefined) object.featuredImage = patch.featuredImage;
 
-    const activity = { type: 'Update', objectType: 'Post', target: postId, object };
-    if (updates.to !== undefined) activity.to = updates.to;
-    if (updates.canReply !== undefined) activity.canReply = updates.canReply;
-    if (updates.canReact !== undefined) activity.canReact = updates.canReact;
+    if (patch.to !== undefined) object.to = patch.to;
+    if (patch.canReply !== undefined) object.canReply = patch.canReply;
+    if (patch.canReact !== undefined) object.canReact = patch.canReact;
 
-    return await this.http.post('/outbox', activity);
+    return await this.http.post('/outbox', { type: 'Update', objectType: 'Post', target: postId, object });
   }
 
   /**
@@ -109,46 +110,58 @@ export class ActivitiesClient {
   /**
    * Reply to a post or page
    * @param {Object} options
-   * @param {string} options.toItemId - ID of the item to reply to
-   * @param {string} options.body - Reply content
+   * @param {string} options.postId - ID of the item to reply to
+   * @param {string} options.content - Reply content
    * @param {Object[]} [options.attachments]
    * @returns {Promise<Object>}
    */
-  async createReply(options) {
-    const { toItemId, body, attachments } = options;
+  async reply(options) {
+    const { postId, content, attachments } = options;
 
-    if (!toItemId) throw new ValidationError('toItemId is required for replies');
-    if (!body || typeof body !== 'string') throw new ValidationError('Reply body is required');
+    if (!postId) throw new ValidationError('postId is required');
+    if (!content || typeof content !== 'string') throw new ValidationError('content is required');
 
-    const object = { type: 'Reply', content: body };
+    const object = { type: 'Reply', content };
     if (attachments) object.attachments = attachments;
 
     return await this.http.post('/outbox', {
       type: 'Reply',
       objectType: 'Reply',
-      to: toItemId,
+      to: postId,
       object,
     });
+  }
+
+  /** Alias for reply() */
+  async createReply(options) {
+    // Support legacy { toItemId, body } shape
+    const normalized = {
+      postId: options.postId || options.toItemId,
+      content: options.content || options.body,
+      attachments: options.attachments,
+    };
+    return this.reply(normalized);
   }
 
   /**
    * React to an object
    * @param {Object} options
-   * @param {string} options.targetId - ID of the object to react to
-   * @param {string} options.reaction - Emoji string
+   * @param {string} options.postId - ID of the object to react to
+   * @param {string} options.emoji - Emoji character (e.g. '👍')
+   * @param {string} [options.name] - Emoji name (e.g. 'thumbsup'); derived from emoji if omitted
    * @returns {Promise<Object>}
    */
   async react(options) {
-    const { targetId, reaction } = options;
+    const { postId, emoji, name } = options;
 
-    if (!targetId) throw new ValidationError('targetId is required for reactions');
-    if (!reaction || typeof reaction !== 'string') throw new ValidationError('reaction is required');
+    if (!postId) throw new ValidationError('postId is required');
+    if (!emoji || typeof emoji !== 'string') throw new ValidationError('emoji is required');
 
     return await this.http.post('/outbox', {
       type: 'React',
       objectType: 'React',
-      to: targetId,
-      object: { type: 'React', content: reaction },
+      to: postId,
+      object: { type: 'React', emoji, name: name || emoji },
     });
   }
 
@@ -249,15 +262,16 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async addToCircle(options) {
-    const { circleId, memberId } = options;
+    const { circleId, memberId, userId } = options;
     if (!circleId) throw new ValidationError('circleId is required');
-    if (!memberId) throw new ValidationError('memberId is required');
+    const member = memberId || userId;
+    if (!member) throw new ValidationError('memberId is required');
 
     return await this.http.post('/outbox', {
       type: 'Add',
       objectType: 'Circle',
       target: circleId,
-      object: memberId,
+      object: member,
     });
   }
 
@@ -269,15 +283,16 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async removeFromCircle(options) {
-    const { circleId, memberId } = options;
+    const { circleId, memberId, userId } = options;
     if (!circleId) throw new ValidationError('circleId is required');
-    if (!memberId) throw new ValidationError('memberId is required');
+    const member = memberId || userId;
+    if (!member) throw new ValidationError('memberId is required');
 
     return await this.http.post('/outbox', {
       type: 'Remove',
       objectType: 'Circle',
       target: circleId,
-      object: memberId,
+      object: member,
     });
   }
 
@@ -295,13 +310,14 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async createGroup(options) {
-    const { name, description, location, icon, to, membershipPolicy } = options;
+    const { name, description, location, icon, to, membershipPolicy, rsvpPolicy } = options;
     if (!name || typeof name !== 'string') throw new ValidationError('Group name is required');
 
     const object = { type: 'Group', name, description: description || '' };
     if (location) object.location = location;
     if (icon) object.icon = icon;
-    if (membershipPolicy) object.rsvpPolicy = membershipPolicy;
+    const policy = rsvpPolicy || membershipPolicy;
+    if (policy) object.rsvpPolicy = policy;
 
     const activity = { type: 'Create', objectType: 'Group', object };
     if (to) activity.to = to;
@@ -571,73 +587,117 @@ export class ActivitiesClient {
   }
 
   /**
-   * Block a user or server
+   * Follow a user — adds them to the current user's Following circle
    * @param {Object} options
-   * @param {string} options.actorId
+   * @param {string} options.userId - User ID or @handle to follow
+   * @returns {Promise<Object>}
+   */
+  async follow(options) {
+    const { userId } = options;
+    if (!userId) throw new ValidationError('userId is required');
+
+    const circleId = this.auth?._user?.following;
+    if (!circleId) throw new ValidationError('No Following circle found — are you logged in?');
+
+    return await this.http.post('/outbox', {
+      type: 'Add',
+      object: userId,
+      target: circleId,
+    });
+  }
+
+  /**
+   * Unfollow a user — removes them from the current user's Following circle
+   * @param {Object} options
+   * @param {string} options.userId - User ID or @handle to unfollow
+   * @returns {Promise<Object>}
+   */
+  async unfollow(options) {
+    const { userId } = options;
+    if (!userId) throw new ValidationError('userId is required');
+
+    const circleId = this.auth?._user?.following;
+    if (!circleId) throw new ValidationError('No Following circle found — are you logged in?');
+
+    return await this.http.post('/outbox', {
+      type: 'Remove',
+      object: userId,
+      target: circleId,
+    });
+  }
+
+  /**
+   * Block a user
+   * @param {Object} options
+   * @param {string} options.userId
    * @returns {Promise<Object>}
    */
   async block(options) {
-    const { actorId } = options;
-    if (!actorId) throw new ValidationError('actorId is required');
+    const { userId } = options;
+    if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.post('/outbox', { type: 'Block', objectType: 'User', target: actorId });
+    return await this.http.post('/outbox', { type: 'Block', objectType: 'User', target: userId });
   }
 
   /**
-   * Unblock a user or server
+   * Unblock a user
    * @param {Object} options
-   * @param {string} options.actorId
+   * @param {string} options.userId
    * @returns {Promise<Object>}
    */
   async unblock(options) {
-    const { actorId } = options;
-    if (!actorId) throw new ValidationError('actorId is required');
+    const { userId } = options;
+    if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.post('/outbox', { type: 'Unblock', objectType: 'User', target: actorId });
+    return await this.http.post('/outbox', { type: 'Unblock', objectType: 'User', target: userId });
   }
 
   /**
-   * Mute a user or server
+   * Mute a user
    * @param {Object} options
-   * @param {string} options.actorId
+   * @param {string} options.userId
    * @returns {Promise<Object>}
    */
   async mute(options) {
-    const { actorId } = options;
-    if (!actorId) throw new ValidationError('actorId is required');
+    const { userId } = options;
+    if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.post('/outbox', { type: 'Mute', objectType: 'User', target: actorId });
+    return await this.http.post('/outbox', { type: 'Mute', objectType: 'User', target: userId });
   }
 
   /**
-   * Unmute a user or server
+   * Unmute a user
    * @param {Object} options
-   * @param {string} options.actorId
+   * @param {string} options.userId
    * @returns {Promise<Object>}
    */
   async unmute(options) {
-    const { actorId } = options;
-    if (!actorId) throw new ValidationError('actorId is required');
+    const { userId } = options;
+    if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.post('/outbox', { type: 'Unmute', objectType: 'User', target: actorId });
+    return await this.http.post('/outbox', { type: 'Unmute', objectType: 'User', target: userId });
   }
 
   /**
    * Flag content for moderation
    * @param {Object} options
-   * @param {string} options.itemId - ID of content to flag
+   * @param {string} options.targetId - ID of content to flag
    * @param {string} options.reason - Reason string
+   * @param {string} [options.notes] - Additional notes
    * @returns {Promise<Object>}
    */
   async flag(options) {
-    const { itemId, reason } = options;
-    if (!itemId) throw new ValidationError('itemId is required');
+    const { targetId, reason, notes } = options;
+    if (!targetId) throw new ValidationError('targetId is required');
     if (!reason || typeof reason !== 'string') throw new ValidationError('reason is required');
+
+    const flagObject = { reason: reason.trim() };
+    if (notes) flagObject.notes = notes.trim();
 
     return await this.http.post('/outbox', {
       type: 'Flag',
-      target: itemId,
-      object: { reason: reason.trim() },
+      target: targetId,
+      object: flagObject,
     });
   }
 

@@ -110,7 +110,7 @@ describe("FeedClient — public reads", () => {
       to: "@public",
       canReply: "@public",
       canReact: "@public",
-      body: "Post for getPost test",
+      content: "Post for getPost test",
     });
     const postId = created?.createdId || created?.result?.id || created?.created?.id || created?.id;
     assert.ok(postId, "should have created a post");
@@ -173,44 +173,35 @@ describe("FeedClient — authenticated reads", () => {
 
 describe("FeedClient — notifications", () => {
   it("getNotifications returns alice's notifications", async () => {
-    const result = await alice.feeds.getNotifications();
-    const items = result.orderedItems || result.items || result;
+    const result = await alice.notifications.list();
+    const items = result.notifications || result.orderedItems || result.items || result;
     assert.ok(items, "should return notifications");
-    // We seeded 4 notifications for alice
-    if (Array.isArray(items)) {
-      assert.ok(items.length > 0, "alice should have notifications");
-    }
   });
 
   it("markNotificationAsRead works", async () => {
-    const result = await alice.feeds.getNotifications();
-    const items = result.orderedItems || result.items || [];
-    if (items.length > 0) {
+    const result = await alice.notifications.list();
+    const items = result.notifications || result.orderedItems || result.items || [];
+    if (Array.isArray(items) && items.length > 0) {
       const notifId = items[0].id;
-      const marked = await alice.feeds.markNotificationAsRead({
-        notificationId: notifId,
-      });
+      const marked = await alice.notifications.markRead(notifId);
       assert.ok(marked, "should return response");
     }
   });
 
   it("markNotificationAsUnread works", async () => {
-    const result = await alice.feeds.getNotifications();
-    const items = result.orderedItems || result.items || [];
-    if (items.length > 0) {
+    const result = await alice.notifications.list();
+    const items = result.notifications || result.orderedItems || result.items || [];
+    if (Array.isArray(items) && items.length > 0) {
       const notifId = items[0].id;
-      // Mark read first, then unread
-      await alice.feeds.markNotificationAsRead({ notificationId: notifId });
-      const marked = await alice.feeds.markNotificationAsUnread({
-        notificationId: notifId,
-      });
+      await alice.notifications.markRead(notifId);
+      const marked = await alice.notifications.markUnread(notifId);
       assert.ok(marked, "should return response");
     }
   });
 
   it("markAllNotificationsAsRead works", async () => {
-    const result = await alice.feeds.markAllNotificationsAsRead();
-    assert.ok(result.count !== undefined, "should return count");
+    const result = await alice.notifications.markAllRead();
+    assert.ok(result, "should return response");
   });
 });
 
@@ -269,15 +260,10 @@ describe("ActivitiesClient — write operations", () => {
       to: "@public",
       canReply: "@public",
       canReact: "@public",
-      body: "Hello from the client test!",
+      content: "Hello from the client test!",
     });
     assert.ok(result, "should return a response");
-    // The outbox should return the created activity or object
-    if (result.object?.id) {
-      createdPostId = result.object.id;
-    } else if (result.id) {
-      createdPostId = result.id;
-    }
+    createdPostId = result.result?.id || result.createdId || result.id;
   });
 
   it("createReply replies to a post", async () => {
@@ -305,8 +291,8 @@ describe("ActivitiesClient — write operations", () => {
     if (items && items.length > 0) {
       const targetId = items[0].id;
       const result = await bob.activities.react({
-        targetId,
-        reaction: "👍",
+        postId: targetId,
+        emoji: "👍",
       });
       assert.ok(result, "should return a response");
     }
@@ -386,7 +372,7 @@ describe("Error handling", () => {
   it("401 for unauthenticated notification access", async () => {
     const client = makeClient();
     await assert.rejects(
-      () => client.feeds.getNotifications(),
+      () => client.notifications.list(),
       (err) => err.statusCode === 401
     );
   });

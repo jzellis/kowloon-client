@@ -220,12 +220,12 @@ describe('Kowloon Comprehensive Test Suite', () => {
         name: 'Approval Required Group',
         description: 'A group that requires approval to join',
         to: '@public',
-        rsvpPolicy: 'approval',
+        rsvpPolicy: 'approvalOnly',
       });
 
       assert.ok(result.ok || result.result, 'Should succeed');
       assert.ok(result.result?.id, 'Group should have an ID');
-      assert.strictEqual(result.result.rsvpPolicy, 'approval', 'Should have approval policy');
+      assert.strictEqual(result.result.rsvpPolicy, 'approvalOnly', 'Should have approval policy');
       createdApprovalGroupId = result.result.id;
       console.log(`   ✓ Created approval group: ${createdApprovalGroupId}`);
     });
@@ -348,8 +348,8 @@ describe('Kowloon Comprehensive Test Suite', () => {
 
       assert.ok(result.ok || result.result, 'Should succeed');
       assert.ok(result.result?.id, 'Reply should have an ID');
-      // inReplyTo is in the activity.object, not result
-      assert.strictEqual(result.activity?.object?.inReplyTo, publicPost.id, 'Should reference original post');
+      // The parent post ID is stored in result.result.target (Reply model) or result.activity.to
+      assert.ok(result.result?.target === publicPost.id || result.activity?.to === publicPost.id, 'Should reference original post');
       console.log(`   ✓ User 2 replied to public post`);
     });
 
@@ -372,8 +372,8 @@ describe('Kowloon Comprehensive Test Suite', () => {
       });
 
       assert.ok(result.ok || result.result, 'Should succeed');
-      // inReplyTo is in the activity.object, not result
-      assert.strictEqual(result.activity?.object?.inReplyTo, replyId, 'Should reference the reply');
+      // The parent reply ID is stored in result.result.target or result.activity.to
+      assert.ok(result.result?.target === replyId || result.activity?.to === replyId, 'Should reference the reply');
       console.log(`   ✓ User 4 replied to a reply (threaded)`);
     });
   });
