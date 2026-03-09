@@ -103,6 +103,23 @@ HttpClient maps HTTP status codes to typed errors:
 
 All extend KowloonError with `statusCode`, `response`, `requestId`.
 
+## Test Status (as of 2026-03-09)
+
+All 116 tests passing: `node --test tests/*.test.js`
+
+Run with: `KOWLOON_BASE_URL=http://kwln1.local:8080 BASE_URL=http://kwln1.local:8080 node --test tests/*.test.js`
+(integration.test.js requires seeded data via seed-test.js, reads `BASE_URL` env var)
+
+### Key API notes confirmed by tests
+- `updatePost`: `updates.content` wraps to `object.source = { content }` (server stores `source.content`)
+- `updatePost`: `updates.to`/`canReply`/`canReact` go into `object`, not activity-level (Update handler reads from object patch)
+- `reply()` stores parent ID in result's `target` field (not `inReplyTo`)
+- `react()` returns `{ status: 'reacted', react, bumped }` (no id — upsert model)
+- `follow()`/`unfollow()` use `auth._user.following` (flat field from login, not nested under `circles`)
+- `addToCircle()`/`removeFromCircle()` accept `userId` as alias for `memberId`
+- `createGroup()` accepts `rsvpPolicy` directly (alias for `membershipPolicy`)
+- Notifications are on `client.notifications.*`, not `client.feeds.*`
+
 ## Related Project
 
 The server is at `../kowloon/`. See its CLAUDE.md for server architecture, schema details, and route patterns.
