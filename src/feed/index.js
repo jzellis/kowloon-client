@@ -304,66 +304,18 @@ export class FeedClient {
     return await this.http.get(`/posts/${encodeURIComponent(postId)}/reacts`, { params });
   }
 
-  // ---- Notifications ----
+  // ---- Files ----
 
   /**
-   * Get the current user's notifications
-   * @param {Object} [options]
-   * @param {number} [options.page]
-   * @param {string} [options.type] - Filter by notification type
-   * @param {string} [options.since] - ISO date cursor
-   * @returns {Promise<Object>}
-   */
-  async getNotifications(options = {}) {
-    const { page, type, since } = options;
-
-    const params = {};
-    if (page) params.page = page;
-    if (type) params.type = type;
-    if (since) params.since = since;
-
-    return await this.http.get('/notifications', { params });
-  }
-
-  /**
-   * Mark a notification as read
+   * Get file metadata
    * @param {Object} options
-   * @param {string} options.notificationId
+   * @param {string} options.fileId - File ID (e.g. 'file:abc123@domain')
    * @returns {Promise<Object>}
    */
-  async markNotificationAsRead(options) {
-    const { notificationId } = options;
-    if (!notificationId) throw new ValidationError('notificationId is required');
-
-    return await this.http.post(`/notifications/${encodeURIComponent(notificationId)}/read`);
-  }
-
-  /**
-   * Mark a notification as unread
-   * @param {Object} options
-   * @param {string} options.notificationId
-   * @returns {Promise<Object>}
-   */
-  async markNotificationAsUnread(options) {
-    const { notificationId } = options;
-    if (!notificationId) throw new ValidationError('notificationId is required');
-
-    return await this.http.post(`/notifications/${encodeURIComponent(notificationId)}/unread`);
-  }
-
-  /**
-   * Mark all notifications as read
-   * @param {Object} [options]
-   * @param {string} [options.type] - Only mark this type as read
-   * @returns {Promise<Object>}
-   */
-  async markAllNotificationsAsRead(options = {}) {
-    const { type } = options;
-
-    const params = {};
-    if (type) params.type = type;
-
-    return await this.http.post('/notifications/read-all', {}, { params });
+  async getFile(options) {
+    const { fileId } = options;
+    if (!fileId) throw new ValidationError('fileId is required');
+    return await this.http.get(`/files/${encodeURIComponent(fileId)}/meta`);
   }
 }
 

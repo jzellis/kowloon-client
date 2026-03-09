@@ -1,5 +1,5 @@
 // Files module for Kowloon client
-// Handles file uploads and retrieval
+// Handles file uploads, retrieval, and serving
 
 import { ValidationError } from '../utils/errors.js';
 
@@ -17,33 +17,31 @@ export class FilesClient {
   /**
    * Upload a file
    * @param {Object} options
-   * @param {Buffer|Blob|ReadableStream} options.file - File data
+   * @param {Buffer|Blob} options.file - File data
    * @param {string} options.filename - Original filename
    * @param {string} [options.contentType] - MIME type
-   * @param {string} [options.title] - Display name for the file
+   * @param {string} [options.title] - Display name
    * @param {string} [options.summary] - Alt text / description
+   * @param {string} [options.to] - Visibility (default '@public')
+   * @param {string} [options.parentObject] - Parent object ID (post/page/etc) — inherits that object's visibility at serve time
    * @param {boolean} [options.generateThumbnail] - Generate thumbnails (for images)
-   * @returns {Promise<Object>} { file: { id, url, thumbnails, metadata } }
+   * @param {number[]} [options.thumbnailSizes] - Thumbnail sizes in px (default [200, 400])
+   * @returns {Promise<Object>} { ok, file: { id, url, thumbnails, metadata } }
    */
   async upload(options) {
-    const { file, filename, contentType, title, summary, generateThumbnail } = options;
+    const {
+      file, filename, contentType, title, summary,
+      to, parentObject, generateThumbnail, thumbnailSizes,
+    } = options;
 
-    if (!file) {
-      throw new ValidationError('file is required for upload');
-    }
+    if (!file) throw new ValidationError('file is required for upload');
+    if (!filename) throw new ValidationError('filename is required for upload');
 
-    if (!filename) {
-      throw new ValidationError('filename is required for upload');
-    }
-
-    // Build FormData
     const formData = new FormData();
 
-    // Handle different file types (Node.js Buffer, browser Blob, etc.)
     if (typeof Blob !== 'undefined' && file instanceof Blob) {
       formData.append('file', file, filename);
-    } else if (Buffer.isBuffer(file)) {
-      // Node.js: create a Blob from Buffer
+    } else if (typeof Buffer !== 'undefined' && Buffer.isBuffer(file)) {
       formData.append('file', new Blob([file], { type: contentType }), filename);
     } else {
       formData.append('file', file, filename);
@@ -51,9 +49,11 @@ export class FilesClient {
 
     if (title) formData.append('title', title);
     if (summary) formData.append('summary', summary);
+    if (to) formData.append('to', to);
+    if (parentObject) formData.append('parentObject', parentObject);
     if (generateThumbnail) formData.append('generateThumbnail', 'true');
+    if (thumbnailSizes) formData.append('thumbnailSizes', JSON.stringify(thumbnailSizes));
 
-    // Use raw fetch for multipart uploads (don't JSON-stringify the body)
     const token = await this.http.getToken();
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -74,21 +74,61 @@ export class FilesClient {
   }
 
   /**
-   * Get file metadata
-   * @param {string} fileKey - File key/ID
-   * @returns {Promise<Object>} File metadata
+   * List the authenticated user's files
+   * @param {Object} [options]
+   * @param {string} [options.type] - Filter by type (Image, Video, Audio, Document)
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @returns {Promise<Object>} { ok, files, total, page, limit }
    */
-  async get(fileKey) {
-    return await this.http.get(`/files/${encodeURIComponent(fileKey)}`);
+  async list(options = {}) {
+    const { type, page, limit } = options;
+    const params = {};
+    if (type) params.type = type;
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    return await this.http.get('/files', { params });
   }
 
   /**
-   * Delete a file
-   * @param {string} fileKey - File key/ID
-   * @returns {Promise<Object>} Result
+   * Get file metadata
+   * @param {string} fileId - File ID (e.g. 'file:abc123@domain')
+   * @returns {Promise<Object>} File metadata
    */
-  async delete(fileKey) {
-    return await this.http.delete(`/files/${encodeURIComponent(fileKey)}`);
+  async getMeta(fileId) {
+    if (!fileId) throw new ValidationError('fileId is required');
+    return await this.http.get(`/files/${encodeURIComponent(fileId)}/meta`);
+  }
+
+  /**
+   * Build the URL for serving a file (for use in <img src> etc.)
+   * The server enforces visibility — pass the token as a query param for
+   * non-public files (e.g. in an <img src> where you can't set headers).
+   * @param {string} fileId - File ID
+   * @param {Object} [options]
+   * @param {number} [options.size] - Thumbnail size (e.g. 200, 400)
+   * @param {string} [options.token] - Auth token (for non-public files in <img src>)
+   * @returns {string} Full URL
+   */
+  serveUrl(fileId, options = {}) {
+    if (!fileId) throw new ValidationError('fileId is required');
+    const { size, token } = options;
+    let url = this.http._buildUrl(`/files/${encodeURIComponent(fileId)}`);
+    const params = new URLSearchParams();
+    if (size) params.set('size', String(size));
+    if (token) params.set('token', token);
+    const qs = params.toString();
+    return qs ? `${url}?${qs}` : url;
+  }
+
+  /**
+   * Delete a file (owner or server admin only)
+   * @param {string} fileId - File ID (e.g. 'file:abc123@domain')
+   * @returns {Promise<Object>} { ok, deleted, id }
+   */
+  async delete(fileId) {
+    if (!fileId) throw new ValidationError('fileId is required');
+    return await this.http.delete(`/files/${encodeURIComponent(fileId)}`);
   }
 }
 

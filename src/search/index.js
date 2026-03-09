@@ -4,6 +4,7 @@ import { ValidationError } from '../utils/errors.js';
 
 /**
  * Search client — all methods use GET /search
+ * Searchable types: posts, pages, groups, users, bookmarks
  */
 export class SearchClient {
   /**
@@ -14,13 +15,13 @@ export class SearchClient {
   }
 
   /**
-   * Search across all object types
+   * Search across object types
    * @param {Object} options
    * @param {string} options.query - Search query
    * @param {number} [options.page]
-   * @param {string} [options.type] - Filter by object type
+   * @param {string} [options.type] - Sub-type filter (e.g. Note, Article for posts)
    * @param {string} [options.since] - ISO date cursor
-   * @param {Object} [options.searchIn] - { posts?, pages?, groups?, circles?, bookmarks?, users? }
+   * @param {Object} [options.searchIn] - { posts?, pages?, groups?, users?, bookmarks? }
    * @returns {Promise<Object>}
    */
   async search(options) {
@@ -48,22 +49,9 @@ export class SearchClient {
    * @param {string} [options.type] - Post type filter (Note, Article, etc.)
    * @param {number} [options.page]
    * @param {string} [options.since]
-   * @returns {Promise<Object>}
    */
   async searchPosts(options) {
     return this.search({ ...options, searchIn: { posts: true } });
-  }
-
-  /**
-   * Search circles
-   * @param {Object} options
-   * @param {string} options.query
-   * @param {number} [options.page]
-   * @param {string} [options.since]
-   * @returns {Promise<Object>}
-   */
-  async searchCircles(options) {
-    return this.search({ ...options, searchIn: { circles: true } });
   }
 
   /**
@@ -72,7 +60,6 @@ export class SearchClient {
    * @param {string} options.query
    * @param {number} [options.page]
    * @param {string} [options.since]
-   * @returns {Promise<Object>}
    */
   async searchGroups(options) {
     return this.search({ ...options, searchIn: { groups: true } });
@@ -84,7 +71,6 @@ export class SearchClient {
    * @param {string} options.query
    * @param {number} [options.page]
    * @param {string} [options.since]
-   * @returns {Promise<Object>}
    */
   async searchUsers(options) {
     return this.search({ ...options, searchIn: { users: true } });
@@ -96,36 +82,20 @@ export class SearchClient {
    * @param {string} options.query
    * @param {number} [options.page]
    * @param {string} [options.since]
-   * @returns {Promise<Object>}
    */
   async searchBookmarks(options) {
     return this.search({ ...options, searchIn: { bookmarks: true } });
   }
 
   /**
-   * Search activities
+   * Search pages
    * @param {Object} options
    * @param {string} options.query
-   * @param {string} [options.type] - Activity type filter (Create, Reply, React, etc.)
    * @param {number} [options.page]
    * @param {string} [options.since]
-   * @returns {Promise<Object>}
    */
-  async searchActivities(options) {
-    return this.search({ ...options, searchIn: { activities: true } });
-  }
-
-  /**
-   * Search the user's notifications
-   * @param {Object} options
-   * @param {string} options.query
-   * @param {string} [options.type] - Notification type filter
-   * @param {number} [options.page]
-   * @param {string} [options.since]
-   * @returns {Promise<Object>}
-   */
-  async searchNotifications(options) {
-    return this.search({ ...options, searchIn: { notifications: true } });
+  async searchPages(options) {
+    return this.search({ ...options, searchIn: { pages: true } });
   }
 }
 

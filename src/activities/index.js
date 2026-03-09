@@ -9,9 +9,11 @@ import { ValidationError } from '../utils/errors.js';
 export class ActivitiesClient {
   /**
    * @param {HttpClient} http - HTTP client instance
+   * @param {FilesClient} files - Files client instance (for upload delegation)
    */
-  constructor(http) {
+  constructor(http, files) {
     this.http = http;
+    this.files = files;
   }
 
   // ---- Posts ----
@@ -642,50 +644,16 @@ export class ActivitiesClient {
   // ---- Files ----
 
   /**
-   * Upload a file
-   * @param {Object} options
-   * @param {Buffer|Blob|ReadableStream} options.file - File data
-   * @param {string} [options.filename] - Original filename
-   * @param {string} [options.contentType] - MIME type
-   * @param {string} [options.title] - Display name
-   * @param {string} [options.summary] - Alt text / description
-   * @returns {Promise<Object>} { file: { id, url, thumbnails, metadata } }
+   * Upload a file. Delegates to FilesClient.upload().
+   * @param {Object} options - See FilesClient.upload() for full option list
+   * @param {Buffer|Blob} options.file - File data
+   * @param {string} options.filename - Original filename
+   * @param {string} [options.to] - Visibility
+   * @param {string} [options.parentObject] - Parent object ID (inherits visibility)
+   * @returns {Promise<Object>} { ok, file: { id, url, thumbnails, metadata } }
    */
   async upload(options) {
-    const { file, filename, contentType, title, summary } = options;
-
-    if (!file) throw new ValidationError('file is required for upload');
-
-    const formData = new FormData();
-
-    if (typeof Blob !== 'undefined' && file instanceof Blob) {
-      formData.append('file', file, filename);
-    } else if (typeof Buffer !== 'undefined' && Buffer.isBuffer(file)) {
-      formData.append('file', new Blob([file], { type: contentType }), filename);
-    } else {
-      formData.append('file', file, filename);
-    }
-
-    if (title) formData.append('title', title);
-    if (summary) formData.append('summary', summary);
-
-    const token = await this.http.getToken();
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const url = this.http._buildUrl('/files/upload');
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => null);
-      throw new Error(body?.error || `Upload failed with status ${response.status}`);
-    }
-
-    return await response.json();
+    return this.files.upload(options);
   }
 }
 

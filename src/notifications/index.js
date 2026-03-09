@@ -49,60 +49,43 @@ export class NotificationsClient {
   }
 
   /**
-   * Get notification type counts
-   * @param {Object} [options]
-   * @param {boolean} [options.unread] - Only count unread
-   * @returns {Promise<Object>} { types, filters }
-   */
-  async typeCounts(options = {}) {
-    const { unread } = options;
-
-    const params = {};
-    if (unread) params.unread = 'true';
-
-    return await this.http.get('/notifications/types', { params });
-  }
-
-  /**
    * Mark a notification as read
    * @param {string} notificationId - Notification ID
-   * @returns {Promise<Object>} { notification }
+   * @returns {Promise<Object>}
    */
   async markRead(notificationId) {
     return await this.http.post(`/notifications/${encodeURIComponent(notificationId)}/read`);
   }
 
   /**
+   * Mark a notification as unread
+   * @param {string} notificationId - Notification ID
+   * @returns {Promise<Object>}
+   */
+  async markUnread(notificationId) {
+    return await this.http.post(`/notifications/${encodeURIComponent(notificationId)}/unread`);
+  }
+
+  /**
    * Mark all notifications as read
    * @param {Object} [options]
    * @param {string[]} [options.types] - Only mark these types as read
-   * @returns {Promise<Object>} { count, filters }
+   * @returns {Promise<Object>}
    */
   async markAllRead(options = {}) {
     const { types } = options;
-
     const params = {};
     if (types && types.length > 0) params.types = types.join(',');
-
-    return await this.http.post('/notifications/read-all', null, { params });
+    return await this.http.post('/notifications/read-all', {}, { params });
   }
 
   /**
    * Dismiss a notification
    * @param {string} notificationId - Notification ID
-   * @returns {Promise<Object>} { success }
+   * @returns {Promise<Object>}
    */
   async dismiss(notificationId) {
     return await this.http.post(`/notifications/${encodeURIComponent(notificationId)}/dismiss`);
-  }
-
-  /**
-   * Delete a notification
-   * @param {string} notificationId - Notification ID
-   * @returns {Promise<Object>} { success }
-   */
-  async delete(notificationId) {
-    return await this.http.delete(`/notifications/${encodeURIComponent(notificationId)}`);
   }
 }
 

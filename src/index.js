@@ -6,6 +6,8 @@ import { AuthClient } from './auth/index.js';
 import { ActivitiesClient } from './activities/index.js';
 import { FeedClient } from './feed/index.js';
 import { SearchClient } from './search/index.js';
+import { FilesClient } from './files/index.js';
+import { NotificationsClient } from './notifications/index.js';
 import { detectStorage } from './utils/storage.js';
 
 /**
@@ -40,11 +42,17 @@ export class KowloonClient {
     // Auth client
     this.auth = new AuthClient(this.http, this.storage);
 
-    // Activities client (posts, replies, reacts, circles, groups, bookmarks, pages, user actions, files)
-    this.activities = new ActivitiesClient(this.http);
+    // Files client — instantiated before activities so activities can delegate to it
+    this.files = new FilesClient(this.http);
 
-    // Feed client (content feeds, single object retrieval, collections, notifications)
+    // Activities client (posts, replies, reacts, circles, groups, bookmarks, pages, user actions)
+    this.activities = new ActivitiesClient(this.http, this.files);
+
+    // Feed client (content feeds, single object retrieval, collections)
     this.feeds = new FeedClient(this.http);
+
+    // Notifications client
+    this.notifications = new NotificationsClient(this.http);
 
     // Search client
     this.search = new SearchClient(this.http);
@@ -65,6 +73,8 @@ export { AuthClient } from './auth/index.js';
 export { ActivitiesClient } from './activities/index.js';
 export { FeedClient } from './feed/index.js';
 export { SearchClient } from './search/index.js';
+export { FilesClient } from './files/index.js';
+export { NotificationsClient } from './notifications/index.js';
 export * from './utils/errors.js';
 export * from './utils/storage.js';
 
