@@ -186,6 +186,40 @@ export class FeedClient {
   }
 
   /**
+   * Browse public/server-visible groups with sorting.
+   * @param {Object} [options]
+   * @param {'date'|'popular'} [options.sort] - Sort order: 'date' (default) or 'popular'
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @returns {Promise<Object>}
+   */
+  async browseGroups(options = {}) {
+    const { sort, page, limit } = options;
+    const params = {};
+    if (sort === 'popular') params.sort = 'popular';
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    return await this.http.get('/groups/browse', { params });
+  }
+
+  /**
+   * Browse public/server-visible circles with sorting.
+   * @param {Object} [options]
+   * @param {'date'|'reacts'} [options.sort] - Sort order: 'date' (default) or 'reacts'
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @returns {Promise<Object>}
+   */
+  async browseCircles(options = {}) {
+    const { sort, page, limit } = options;
+    const params = {};
+    if (sort === 'reacts') params.sort = 'reacts';
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    return await this.http.get('/circles/browse', { params });
+  }
+
+  /**
    * Get a single circle by ID (owner-only for user circles)
    * @param {Object} options
    * @param {string} options.circleId

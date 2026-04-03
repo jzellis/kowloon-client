@@ -54,7 +54,7 @@ export class AuthClient {
    * @returns {Promise<Object>} { user, token }
    */
   async register(credentials) {
-    const { username, password, email, profile } = credentials;
+    const { username, password, email, profile, inviteCode } = credentials;
 
     if (!username || !password) {
       throw new AuthenticationError('Username and password are required');
@@ -65,6 +65,7 @@ export class AuthClient {
       password,
       email,
       profile,
+      inviteCode,
     });
 
     if (!response.token) {

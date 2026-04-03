@@ -37,15 +37,39 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async createPost(options) {
-    const { type = 'Note', to, canReply, canReact, content, title, tags, location, startTime, endTime, attachments, featuredImage } = options;
+    const {
+      type = 'Note', to, canReply, canReact,
+      content, source,          // accept both; content takes precedence
+      title, name,              // accept both; title takes precedence
+      href, url,                // accept both; href takes precedence (for Link type)
+      tags, tag,                // accept both; tags takes precedence
+      location, startTime, endTime, attachments, featuredImage,
+    } = options;
 
-    if (!content || typeof content !== 'string') {
-      throw new ValidationError('content is required');
+    const body  = content ?? source ?? '';
+    const label = title ?? name;
+    const link  = href ?? url;
+
+    // Normalize tags: accept strings or ActivityStreams Hashtag objects
+    const rawTags = tags ?? tag;
+    const tagsValue = rawTags?.length
+      ? rawTags.map((t) => {
+          if (typeof t === 'string') return t.replace(/^#+/, '');
+          if (t?.name) return String(t.name).replace(/^#+/, '');
+          return String(t);
+        })
+      : undefined;
+
+    // Notes always require content; other types may have title/date/attachments only
+    if (type === 'Note' && !body) {
+      throw new ValidationError('content is required for Note posts');
     }
 
-    const object = { type, content };
-    if (title && type !== 'Note') object.title = title;
-    if (tags) object.tags = tags;
+    const object = { type };
+    if (body) object.content = body;
+    if (label && type !== 'Note') object.title = label;
+    if (link) object.href = link;
+    if (tagsValue) object.tags = tagsValue;
     if (location) object.location = location;
     if (startTime) object.startTime = startTime;
     if (endTime) object.endTime = endTime;
@@ -69,8 +93,10 @@ export class ActivitiesClient {
    * @param {Object[]} [options.attachments] [options.featuredImage]
    * @returns {Promise<Object>}
    */
-  async updatePost(options) {
-    const { postId, updates } = options;
+  async updatePost(options, legacyUpdates) {
+    // Accept either updatePost({ postId, updates }) or updatePost(postId, updates)
+    const postId  = typeof options === 'string' ? options : options.postId;
+    const updates = typeof options === 'string' ? legacyUpdates : (options.updates ?? options);
 
     if (!postId) throw new ValidationError('postId is required');
 
@@ -576,7 +602,10 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async updateProfile(options) {
-    const { updates } = options;
+    // Accept either { updates: {...} } or the fields directly
+    const updates = (options.updates && typeof options.updates === 'object')
+      ? options.updates
+      : options;
     if (!updates || typeof updates !== 'object') throw new ValidationError('updates object is required');
 
     return await this.http.post('/outbox', {
