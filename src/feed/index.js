@@ -25,12 +25,11 @@ export class FeedClient {
    * @param {string} [options.since] - ISO date cursor
    * @returns {Promise<Object>}
    */
-  async getServerPosts(options) {
+  async getServerPosts(options = {}) {
     const { serverId, type, page, since } = options;
 
-    if (!serverId) throw new ValidationError('serverId is required');
-
-    const params = { serverId };
+    const params = {};
+    if (serverId) params.serverId = serverId;
     if (type) params.type = type;
     if (page) params.page = page;
     if (since) params.since = since;
