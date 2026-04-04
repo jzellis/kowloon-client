@@ -65,13 +65,16 @@ export class FeedClient {
    * @returns {Promise<Object>}
    */
   async getCirclePosts(options) {
-    const { circleId, type, page } = options;
+    const { circleId, types, type, since, limit } = options;
 
     if (!circleId) throw new ValidationError('circleId is required');
 
     const params = {};
-    if (type) params.type = type;
-    if (page) params.page = page;
+    // Accept types (array), type (string), or neither
+    const typeList = types ?? (type ? [type] : null);
+    if (typeList?.length) params.types = typeList.join(',');
+    if (since) params.since = since;
+    if (limit) params.limit = limit;
 
     return await this.http.get(`/circles/${encodeURIComponent(circleId)}/posts`, { params });
   }

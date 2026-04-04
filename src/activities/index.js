@@ -17,6 +17,41 @@ export class ActivitiesClient {
     this.auth = auth;
   }
 
+  /**
+   * Build an actor object from the currently authenticated user.
+   * Included in outgoing activities so the server never needs to look it up.
+   * @private
+   */
+  _actorFromUser() {
+    const u = this.auth?.getUser?.();
+    if (!u?.id) return undefined;
+    // Derive server (@domain) and URLs from the actor ID (@user@domain)
+    const domain = u.id.replace(/^@/, '').split('@')[1] ?? '';
+    const baseUrl = domain ? `https://${domain}` : '';
+    const userPath = `${baseUrl}/users/${encodeURIComponent(u.id)}`;
+    return {
+      id: u.id,
+      type: u.type ?? 'Person',
+      name: u.profile?.name ?? u.username,
+      icon: u.profile?.icon ?? null,
+      url: u.url ?? `${baseUrl}/users/${encodeURIComponent(u.id)}`,
+      inbox: u.inbox ?? `${userPath}/inbox`,
+      outbox: u.outbox ?? `${userPath}/outbox`,
+      server: u.server ?? (domain ? `@${domain}` : null),
+    };
+  }
+
+  /**
+   * Post an activity to /outbox, automatically injecting actor if not already set.
+   * All write operations should use this instead of http.post('/outbox', ...) directly.
+   * @private
+   */
+  _post(activity) {
+    const actor = this._actorFromUser();
+    const enriched = (actor && !activity.actor) ? { ...activity, actor } : activity;
+    return this.http.post('/outbox', enriched);
+  }
+
   // ---- Posts ----
 
   /**
@@ -81,7 +116,7 @@ export class ActivitiesClient {
     if (canReply) activity.canReply = canReply;
     if (canReact) activity.canReact = canReact;
 
-    return await this.http.post('/outbox', activity);
+    return await this._post(activity);
   }
 
   /**
@@ -115,7 +150,7 @@ export class ActivitiesClient {
     if (patch.canReply !== undefined) object.canReply = patch.canReply;
     if (patch.canReact !== undefined) object.canReact = patch.canReact;
 
-    return await this.http.post('/outbox', { type: 'Update', objectType: 'Post', target: postId, object });
+    return await this._post({ type: 'Update', objectType: 'Post', target: postId, object });
   }
 
   /**
@@ -128,7 +163,7 @@ export class ActivitiesClient {
     const { postId } = options;
     if (!postId) throw new ValidationError('postId is required to delete post');
 
-    return await this.http.post('/outbox', { type: 'Delete', objectType: 'Post', target: postId });
+    return await this._post({ type: 'Delete', objectType: 'Post', target: postId });
   }
 
   // ---- Replies & Reactions ----
@@ -150,7 +185,7 @@ export class ActivitiesClient {
     const object = { type: 'Reply', content };
     if (attachments) object.attachments = attachments;
 
-    return await this.http.post('/outbox', {
+    return await this._post({
       type: 'Reply',
       objectType: 'Reply',
       to: postId,
@@ -183,7 +218,7 @@ export class ActivitiesClient {
     if (!postId) throw new ValidationError('postId is required');
     if (!emoji || typeof emoji !== 'string') throw new ValidationError('emoji is required');
 
-    return await this.http.post('/outbox', {
+    return await this._post({
       type: 'React',
       objectType: 'React',
       to: postId,
@@ -201,7 +236,7 @@ export class ActivitiesClient {
     const { reactId } = options;
     if (!reactId) throw new ValidationError('reactId is required to remove reaction');
 
-    return await this.http.post('/outbox', { type: 'Undo', objectType: 'React', target: reactId });
+    return await this._post({ type: 'Undo', objectType: 'React', target: reactId });
   }
 
   // ---- Generic Activity ----
@@ -216,7 +251,7 @@ export class ActivitiesClient {
     const { activity } = options;
     if (!activity || typeof activity !== 'object') throw new ValidationError('activity object is required');
 
-    return await this.http.post('/outbox', activity);
+    return await this._post(activity);
   }
 
   // ---- Circles ----
@@ -242,7 +277,7 @@ export class ActivitiesClient {
     if (icon) activity.object.icon = icon;
     if (to) activity.to = to;
 
-    return await this.http.post('/outbox', activity);
+    return await this._post(activity);
   }
 
   /**
@@ -264,7 +299,7 @@ export class ActivitiesClient {
     const activity = { type: 'Update', objectType: 'Circle', target: circleId, object };
     if (to !== undefined) activity.to = to;
 
-    return await this.http.post('/outbox', activity);
+    return await this._post(activity);
   }
 
   /**
@@ -277,7 +312,7 @@ export class ActivitiesClient {
     const { circleId } = options;
     if (!circleId) throw new ValidationError('circleId is required to delete circle');
 
-    return await this.http.post('/outbox', { type: 'Delete', objectType: 'Circle', target: circleId });
+    return await this._post({ type: 'Delete', objectType: 'Circle', target: circleId });
   }
 
   /**
@@ -293,7 +328,7 @@ export class ActivitiesClient {
     const member = memberId || userId;
     if (!member) throw new ValidationError('memberId is required');
 
-    return await this.http.post('/outbox', {
+    return await this._post({
       type: 'Add',
       objectType: 'Circle',
       target: circleId,
@@ -314,7 +349,7 @@ export class ActivitiesClient {
     const member = memberId || userId;
     if (!member) throw new ValidationError('memberId is required');
 
-    return await this.http.post('/outbox', {
+    return await this._post({
       type: 'Remove',
       objectType: 'Circle',
       target: circleId,
@@ -348,7 +383,7 @@ export class ActivitiesClient {
     const activity = { type: 'Create', objectType: 'Group', object };
     if (to) activity.to = to;
 
-    return await this.http.post('/outbox', activity);
+    return await this._post(activity);
   }
 
   /**
@@ -372,7 +407,7 @@ export class ActivitiesClient {
     const activity = { type: 'Update', objectType: 'Group', target: groupId, object };
     if (to !== undefined) activity.to = to;
 
-    return await this.http.post('/outbox', activity);
+    return await this._post(activity);
   }
 
   /**
@@ -385,7 +420,7 @@ export class ActivitiesClient {
     const { groupId } = options;
     if (!groupId) throw new ValidationError('groupId is required');
 
-    return await this.http.post('/outbox', { type: 'Delete', objectType: 'Group', target: groupId });
+    return await this._post({ type: 'Delete', objectType: 'Group', target: groupId });
   }
 
   /**
@@ -398,7 +433,7 @@ export class ActivitiesClient {
     const { groupId } = options;
     if (!groupId) throw new ValidationError('groupId is required');
 
-    return await this.http.post('/outbox', { type: 'Join', objectType: 'Group', target: groupId });
+    return await this._post({ type: 'Join', objectType: 'Group', target: groupId });
   }
 
   /**
@@ -411,7 +446,7 @@ export class ActivitiesClient {
     const { groupId } = options;
     if (!groupId) throw new ValidationError('groupId is required');
 
-    return await this.http.post('/outbox', { type: 'Leave', objectType: 'Group', target: groupId });
+    return await this._post({ type: 'Leave', objectType: 'Group', target: groupId });
   }
 
   /**
@@ -426,7 +461,7 @@ export class ActivitiesClient {
     if (!groupId) throw new ValidationError('groupId is required');
     if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.post('/outbox', { type: 'Add', to: groupId, object: userId });
+    return await this._post({ type: 'Add', to: groupId, object: userId });
   }
 
   /**
@@ -441,7 +476,7 @@ export class ActivitiesClient {
     if (!groupId) throw new ValidationError('groupId is required');
     if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.post('/outbox', { type: 'Reject', to: groupId, object: userId });
+    return await this._post({ type: 'Reject', to: groupId, object: userId });
   }
 
   // ---- Bookmarks ----
@@ -475,7 +510,7 @@ export class ActivitiesClient {
     if (to) activity.to = to;
     if (canReact) activity.canReact = canReact;
 
-    return await this.http.post('/outbox', activity);
+    return await this._post(activity);
   }
 
   /**
@@ -501,7 +536,7 @@ export class ActivitiesClient {
     if (updates.to !== undefined) activity.to = updates.to;
     if (updates.canReact !== undefined) activity.canReact = updates.canReact;
 
-    return await this.http.post('/outbox', activity);
+    return await this._post(activity);
   }
 
   /**
@@ -514,7 +549,7 @@ export class ActivitiesClient {
     const { bookmarkId } = options;
     if (!bookmarkId) throw new ValidationError('bookmarkId is required');
 
-    return await this.http.post('/outbox', { type: 'Delete', objectType: 'Bookmark', target: bookmarkId });
+    return await this._post({ type: 'Delete', objectType: 'Bookmark', target: bookmarkId });
   }
 
   // ---- Pages ----
@@ -551,7 +586,7 @@ export class ActivitiesClient {
     if (canReply) activity.canReply = canReply;
     if (canReact) activity.canReact = canReact;
 
-    return await this.http.post('/outbox', activity);
+    return await this._post(activity);
   }
 
   /**
@@ -577,7 +612,7 @@ export class ActivitiesClient {
     if (updates.canReply !== undefined) activity.canReply = updates.canReply;
     if (updates.canReact !== undefined) activity.canReact = updates.canReact;
 
-    return await this.http.post('/outbox', activity);
+    return await this._post(activity);
   }
 
   /**
@@ -590,7 +625,7 @@ export class ActivitiesClient {
     const { pageId } = options;
     if (!pageId) throw new ValidationError('pageId is required');
 
-    return await this.http.post('/outbox', { type: 'Delete', objectType: 'Page', target: pageId });
+    return await this._post({ type: 'Delete', objectType: 'Page', target: pageId });
   }
 
   // ---- User Actions ----
@@ -608,7 +643,7 @@ export class ActivitiesClient {
       : options;
     if (!updates || typeof updates !== 'object') throw new ValidationError('updates object is required');
 
-    return await this.http.post('/outbox', {
+    return await this._post({
       type: 'Update',
       objectType: 'User',
       object: updates,
@@ -628,7 +663,7 @@ export class ActivitiesClient {
     const circleId = this.auth?._user?.following;
     if (!circleId) throw new ValidationError('No Following circle found — are you logged in?');
 
-    return await this.http.post('/outbox', {
+    return await this._post({
       type: 'Add',
       object: userId,
       target: circleId,
@@ -648,7 +683,7 @@ export class ActivitiesClient {
     const circleId = this.auth?._user?.following;
     if (!circleId) throw new ValidationError('No Following circle found — are you logged in?');
 
-    return await this.http.post('/outbox', {
+    return await this._post({
       type: 'Remove',
       object: userId,
       target: circleId,
@@ -665,7 +700,7 @@ export class ActivitiesClient {
     const { userId } = options;
     if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.post('/outbox', { type: 'Block', objectType: 'User', target: userId });
+    return await this._post({ type: 'Block', objectType: 'User', target: userId });
   }
 
   /**
@@ -678,7 +713,7 @@ export class ActivitiesClient {
     const { userId } = options;
     if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.post('/outbox', { type: 'Unblock', objectType: 'User', target: userId });
+    return await this._post({ type: 'Unblock', objectType: 'User', target: userId });
   }
 
   /**
@@ -691,7 +726,7 @@ export class ActivitiesClient {
     const { userId } = options;
     if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.post('/outbox', { type: 'Mute', objectType: 'User', target: userId });
+    return await this._post({ type: 'Mute', objectType: 'User', target: userId });
   }
 
   /**
@@ -704,7 +739,7 @@ export class ActivitiesClient {
     const { userId } = options;
     if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.post('/outbox', { type: 'Unmute', objectType: 'User', target: userId });
+    return await this._post({ type: 'Unmute', objectType: 'User', target: userId });
   }
 
   /**
@@ -723,7 +758,7 @@ export class ActivitiesClient {
     const flagObject = { reason: reason.trim() };
     if (notes) flagObject.notes = notes.trim();
 
-    return await this.http.post('/outbox', {
+    return await this._post({
       type: 'Flag',
       target: targetId,
       object: flagObject,

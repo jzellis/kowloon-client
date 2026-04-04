@@ -161,11 +161,14 @@ export class AuthClient {
       const parts = token.split('.');
       if (parts.length !== 3) throw new Error('Invalid token format');
 
-      const payload = parts[1];
+      // JWTs use base64url — normalize to standard base64 before decoding
+      let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+
       const decoded = JSON.parse(
-        Buffer.from ?
-          Buffer.from(payload, 'base64').toString('utf8') :
-          atob(payload) // Browser fallback
+        typeof Buffer !== 'undefined'
+          ? Buffer.from(b64, 'base64').toString('utf8')
+          : atob(b64)
       );
 
       return decoded;
