@@ -195,6 +195,14 @@ export class FeedClient {
    * @param {number} [options.limit]
    * @returns {Promise<Object>}
    */
+  async getGroups(options = {}) {
+    const { limit, page } = options;
+    const params = {};
+    if (limit) params.limit = limit;
+    if (page) params.page = page;
+    return await this.http.get('/groups', { params });
+  }
+
   async browseGroups(options = {}) {
     const { sort, page, limit } = options;
     const params = {};
