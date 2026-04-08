@@ -79,6 +79,7 @@ export class ActivitiesClient {
       href, url,                // accept both; href takes precedence (for Link type)
       tags, tag,                // accept both; tags takes precedence
       location, startTime, endTime, attachments, featuredImage,
+      target,    // ID of the post being shared (for Link-type shares)
     } = options;
 
     const body  = content ?? source ?? '';
@@ -110,6 +111,7 @@ export class ActivitiesClient {
     if (endTime) object.endTime = endTime;
     if (attachments) object.attachments = attachments;
     if (featuredImage) object.featuredImage = featuredImage;
+    if (target) object.target = target;
 
     const activity = { type: 'Create', objectType: 'Post', object };
     if (to) activity.to = to;
