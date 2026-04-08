@@ -14,6 +14,16 @@ export class FeedClient {
     this.http = http;
   }
 
+  // ---- Server Info ----
+
+  /**
+   * Get server info and public settings (name, domain, likeEmojis, etc.)
+   * @returns {Promise<Object>} { name, domain, settings: { likeEmojis, ... }, ... }
+   */
+  async getServerInfo() {
+    return await this.http.get('/');
+  }
+
   // ---- Content Feeds ----
 
   /**
