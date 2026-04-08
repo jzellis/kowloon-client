@@ -314,12 +314,14 @@ export class FeedClient {
    * @returns {Promise<Object>}
    */
   async getUserBookmarks(options) {
-    const { userId, page, since } = options;
+    const { userId, page, since, type, parentFolder } = options;
     if (!userId) throw new ValidationError('userId is required');
 
     const params = {};
     if (page) params.page = page;
     if (since) params.since = since;
+    if (type) params.type = type;
+    if (parentFolder) params.parentFolder = parentFolder;
 
     return await this.http.get(`/users/${encodeURIComponent(userId)}/bookmarks`, { params });
   }

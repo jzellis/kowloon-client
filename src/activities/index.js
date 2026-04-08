@@ -496,21 +496,28 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async createBookmark(options) {
-    const { type = 'Bookmark', href, title, parentId, to, canReact, body, icon, featuredImage } = options;
+    const {
+      type = 'Bookmark', href, title, parentFolder, to,
+      canReply = 'public', canReact = 'public',
+      body, image, featuredImage, tags,
+    } = options;
 
     if (!title) throw new ValidationError('Bookmark title is required');
     if (type === 'Bookmark' && !href) throw new ValidationError('href is required for Bookmarks');
 
     const object = { type, title };
     if (href) object.href = href;
-    if (parentId) object.parentId = parentId;
-    if (body) object.content = body;
-    if (icon) object.icon = icon;
-    if (featuredImage) object.featuredImage = featuredImage;
+    if (parentFolder) object.parentFolder = parentFolder;
+    // Send body as source so Bookmark pre-save can render it to HTML
+    if (body) object.source = { content: body, mediaType: 'text/markdown' };
+    const img = featuredImage ?? image;
+    if (img) object.image = img;
+    if (tags?.length) object.tags = tags;
 
     const activity = { type: 'Create', objectType: 'Bookmark', object };
     if (to) activity.to = to;
-    if (canReact) activity.canReact = canReact;
+    activity.canReply = canReply;
+    activity.canReact = canReact;
 
     return await this._post(activity);
   }
