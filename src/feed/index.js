@@ -17,8 +17,8 @@ export class FeedClient {
   // ---- Server Info ----
 
   /**
-   * Get server info and public settings (name, domain, likeEmojis, etc.)
-   * @returns {Promise<Object>} { name, domain, settings: { likeEmojis, ... }, ... }
+   * Get server info and public settings (name, domain, reactEmojis, etc.)
+   * @returns {Promise<Object>} { name, domain, settings: { reactEmojis, ... }, ... }
    */
   async getServerInfo() {
     return await this.http.get('/');
