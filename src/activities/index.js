@@ -318,23 +318,25 @@ export class ActivitiesClient {
   }
 
   /**
-   * Add a member to a circle
+   * Add one or more members to a circle
    * @param {Object} options
    * @param {string} options.circleId
-   * @param {string} options.memberId - @user@domain or server actorId
+   * @param {string} [options.memberId] - single @user@domain or server actorId
+   * @param {string[]} [options.memberIds] - array of actorIds for batch add
    * @returns {Promise<Object>}
    */
   async addToCircle(options) {
-    const { circleId, memberId, userId } = options;
+    const { circleId, memberId, memberIds, userId } = options;
     if (!circleId) throw new ValidationError('circleId is required');
-    const member = memberId || userId;
-    if (!member) throw new ValidationError('memberId is required');
+
+    const ids = memberIds ?? (memberId || userId ? [memberId || userId] : null);
+    if (!ids?.length) throw new ValidationError('memberId or memberIds is required');
 
     return await this._post({
       type: 'Add',
       objectType: 'Circle',
       target: circleId,
-      object: member,
+      object: ids.length === 1 ? ids[0] : ids,
     });
   }
 
