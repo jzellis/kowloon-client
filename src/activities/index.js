@@ -318,25 +318,29 @@ export class ActivitiesClient {
   }
 
   /**
-   * Add one or more members to a circle
+   * Add one or more members to a circle.
    * @param {Object} options
    * @param {string} options.circleId
    * @param {string} [options.memberId] - single @user@domain or server actorId
    * @param {string[]} [options.memberIds] - array of actorIds for batch add
+   * @param {Array<string|Object>} [options.members] - array of actorId strings OR full member
+   *   objects {id, name, icon, ...}. Takes precedence over memberIds. Useful when copying a
+   *   circle where member objects are already hydrated — avoids redundant server lookups.
    * @returns {Promise<Object>}
    */
   async addToCircle(options) {
-    const { circleId, memberId, memberIds, userId } = options;
+    const { circleId, memberId, memberIds, members, userId } = options;
     if (!circleId) throw new ValidationError('circleId is required');
 
-    const ids = memberIds ?? (memberId || userId ? [memberId || userId] : null);
-    if (!ids?.length) throw new ValidationError('memberId or memberIds is required');
+    // members accepts strings or full objects; memberIds/memberId are string-only shortcuts
+    const all = members ?? memberIds ?? (memberId || userId ? [memberId || userId] : null);
+    if (!all?.length) throw new ValidationError('memberId, memberIds, or members is required');
 
     return await this._post({
       type: 'Add',
       objectType: 'Circle',
       target: circleId,
-      object: ids.length === 1 ? ids[0] : ids,
+      object: all.length === 1 ? all[0] : all,
     });
   }
 
