@@ -8,6 +8,7 @@ import { FeedClient } from './feed/index.js';
 import { SearchClient } from './search/index.js';
 import { FilesClient } from './files/index.js';
 import { NotificationsClient } from './notifications/index.js';
+import { ThemesClient } from './themes/index.js';
 import { detectStorage } from './utils/storage.js';
 
 /**
@@ -54,6 +55,9 @@ export class KowloonClient {
     // Notifications client
     this.notifications = new NotificationsClient(this.http);
 
+    // Themes client
+    this.themes = new ThemesClient(this.http);
+
     // Search client
     this.search = new SearchClient(this.http);
   }
@@ -75,6 +79,7 @@ export { FeedClient } from './feed/index.js';
 export { SearchClient } from './search/index.js';
 export { FilesClient } from './files/index.js';
 export { NotificationsClient } from './notifications/index.js';
+export { ThemesClient } from './themes/index.js';
 export * from './utils/errors.js';
 export * from './utils/storage.js';
 
