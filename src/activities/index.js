@@ -174,17 +174,21 @@ export class ActivitiesClient {
    * Reply to a post or page
    * @param {Object} options
    * @param {string} options.postId - ID of the item to reply to
-   * @param {string} options.content - Reply content
+   * @param {string} options.content - Reply content (Markdown)
+   * @param {string} [options.mediaType] - Content media type (default: text/markdown)
    * @param {Object[]} [options.attachments]
    * @returns {Promise<Object>}
    */
   async reply(options) {
-    const { postId, content, attachments } = options;
+    const { postId, content, mediaType = 'text/markdown', attachments } = options;
 
     if (!postId) throw new ValidationError('postId is required');
     if (!content || typeof content !== 'string') throw new ValidationError('content is required');
 
-    const object = { type: 'Reply', content };
+    const object = {
+      type: 'Reply',
+      source: { content, mediaType },
+    };
     if (attachments) object.attachments = attachments;
 
     return await this._post({
