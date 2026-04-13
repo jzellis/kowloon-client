@@ -9,6 +9,7 @@ import { SearchClient } from './search/index.js';
 import { FilesClient } from './files/index.js';
 import { NotificationsClient } from './notifications/index.js';
 import { ThemesClient } from './themes/index.js';
+import { AdminClient } from './admin/index.js';
 import { detectStorage } from './utils/storage.js';
 
 /**
@@ -60,6 +61,9 @@ export class KowloonClient {
 
     // Search client
     this.search = new SearchClient(this.http);
+
+    // Admin client
+    this.admin = new AdminClient(this.http);
   }
 
   /**
@@ -80,6 +84,7 @@ export { SearchClient } from './search/index.js';
 export { FilesClient } from './files/index.js';
 export { NotificationsClient } from './notifications/index.js';
 export { ThemesClient } from './themes/index.js';
+export { AdminClient } from './admin/index.js';
 export * from './utils/errors.js';
 export * from './utils/storage.js';
 

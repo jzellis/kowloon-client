@@ -81,6 +81,12 @@ export class AdminClient {
     return await this.http.delete(`/admin/users/${encodeURIComponent(userId)}`, { params });
   }
 
+  async restoreUser(options) {
+    const { userId } = options;
+    if (!userId) throw new ValidationError('userId is required');
+    return await this.http.post(`/admin/users/${encodeURIComponent(userId)}/restore`);
+  }
+
   // ---- Circles ----
 
   async getCircles(options = {}) {
@@ -133,6 +139,12 @@ export class AdminClient {
     return await this.http.delete(`/admin/groups/${encodeURIComponent(groupId)}`, { params });
   }
 
+  async restoreGroup(options) {
+    const { groupId } = options;
+    if (!groupId) throw new ValidationError('groupId is required');
+    return await this.http.post(`/admin/groups/${encodeURIComponent(groupId)}/restore`);
+  }
+
   // ---- Posts ----
 
   async getPosts(options = {}) {
@@ -157,6 +169,12 @@ export class AdminClient {
     const params = {};
     if (fullDelete) params.fullDelete = 'true';
     return await this.http.delete(`/admin/posts/${encodeURIComponent(postId)}`, { params });
+  }
+
+  async restorePost(options) {
+    const { postId } = options;
+    if (!postId) throw new ValidationError('postId is required');
+    return await this.http.post(`/admin/posts/${encodeURIComponent(postId)}/restore`);
   }
 
   // ---- Bookmarks ----
@@ -249,6 +267,19 @@ export class AdminClient {
     return await this.http.get('/admin/flagged', { params: this._listParams(options) });
   }
 
+  async getFlag(options) {
+    const { flagId } = options;
+    if (!flagId) throw new ValidationError('flagId is required');
+    return await this.http.get(`/admin/flagged/${encodeURIComponent(flagId)}`);
+  }
+
+  async resolveFlag(options) {
+    const { flagId, status, notes } = options;
+    if (!flagId) throw new ValidationError('flagId is required');
+    if (!['resolved', 'dismissed'].includes(status)) throw new ValidationError("status must be 'resolved' or 'dismissed'");
+    return await this.http.patch(`/admin/flagged/${encodeURIComponent(flagId)}`, { status, notes });
+  }
+
   // ---- Settings ----
 
   async getSettings(options = {}) {
@@ -282,7 +313,7 @@ export class AdminClient {
   }
 
   async serverStats() {
-    return await this.http.get('/admin/server/stats');
+    return await this.http.get('/admin/system');
   }
 
   async adminSearch(options) {
