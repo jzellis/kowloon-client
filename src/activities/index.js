@@ -662,9 +662,13 @@ export class ActivitiesClient {
       : options;
     if (!updates || typeof updates !== 'object') throw new ValidationError('updates object is required');
 
+    const userId = this.auth?.getUser?.()?.id ?? this.auth?._user?.id;
+    if (!userId) throw new ValidationError('Not authenticated');
+
     return await this._post({
       type: 'Update',
       objectType: 'User',
+      target: userId,
       object: updates,
     });
   }
