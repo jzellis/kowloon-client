@@ -137,11 +137,26 @@ export class AuthClient {
     const token = await this.getToken();
     if (!token) return null;
 
-    // TODO: Verify token is still valid by making a test API call
-    // For now, just decode the JWT payload (not verifying signature client-side)
     try {
       const payload = this._decodeToken(token);
       this._user = payload.user || null;
+      if (!this._user?.id) {
+        await this.logout();
+        return null;
+      }
+      // Fetch fresh profile/prefs so stale JWT snapshot doesn't linger
+      try {
+        const fresh = await this.http.get(`/users/${encodeURIComponent(this._user.id)}`);
+        if (fresh?.id) {
+          this._user = {
+            ...this._user,
+            profile: fresh.profile ?? this._user.profile,
+            prefs: fresh.prefs ?? this._user.prefs,
+          };
+        }
+      } catch {
+        // Non-fatal — keep the decoded snapshot if the refresh fails
+      }
       return this._user;
     } catch (e) {
       // Invalid token, clear it
