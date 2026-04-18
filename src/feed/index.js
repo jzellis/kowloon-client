@@ -360,6 +360,38 @@ export class FeedClient {
     return await this.http.get(`/posts/${encodeURIComponent(postId)}/reacts`, { params });
   }
 
+  // ---- User Lookup / Search ----
+
+  /**
+   * Resolve a user by full handle, including remote users via server-side WebFinger fetch.
+   * Auth required — server proxies the outbound request.
+   * @param {Object} options
+   * @param {string} options.id - Full handle e.g. "@bob@kwln2.local" or local "@alice@kwln.org"
+   * @returns {Promise<Object>} { item: userProfile }
+   */
+  async lookupUser(options) {
+    const { id } = options;
+    if (!id) throw new ValidationError('id is required');
+    return await this.http.get('/users/lookup', { params: { id } });
+  }
+
+  /**
+   * Search local users by name or username fragment.
+   * @param {Object} options
+   * @param {string} options.q - Search query (2+ chars recommended)
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @returns {Promise<Object>} OrderedCollection of matching users
+   */
+  async searchUsers(options) {
+    const { q, page, limit } = options;
+    if (!q) throw new ValidationError('q is required');
+    const params = { q, searchIn: 'users' };
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    return await this.http.get('/search', { params });
+  }
+
   // ---- Files ----
 
   /**
