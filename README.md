@@ -201,11 +201,11 @@ try {
 
 ```bash
 # Start Kowloon server first
-cd ../kowloon
+cd ../server
 npm start
 
 # Run tests
-cd ../kowloon-client
+cd ../client
 npm test
 ```
 

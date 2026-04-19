@@ -122,7 +122,7 @@ Run with: `KOWLOON_BASE_URL=http://kwln1.local:8080 BASE_URL=http://kwln1.local:
 
 ## Related Project
 
-The server is at `../kowloon/`. See its CLAUDE.md for server architecture, schema details, and route patterns.
+The server is at `../server/`. See its CLAUDE.md for server architecture, schema details, and route patterns.
 
 ## Consolidated API Spec
 
