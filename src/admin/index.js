@@ -24,7 +24,7 @@ export class AdminClient {
     const params = {};
     if (page) params.page = page;
     if (since) params.since = since;
-    if (showDeleted) params.showDeleted = 'true';
+    if (showDeleted) params.deleted = 'true';
     if (type) params.type = type;
     return params;
   }
@@ -221,12 +221,37 @@ export class AdminClient {
     return await this.http.patch(`/admin/pages/${encodeURIComponent(pageId)}`, updates);
   }
 
+  async createPage(options = {}) {
+    const { title, slug, type, summary, source, to, canReply, canReact, order, parentFolder, href, tags } = options;
+    if (!title) throw new ValidationError('title is required');
+    const body = { title };
+    if (slug) body.slug = slug;
+    if (type) body.type = type;
+    if (summary) body.summary = summary;
+    if (source) body.source = source;
+    if (to) body.to = to;
+    if (canReply) body.canReply = canReply;
+    if (canReact) body.canReact = canReact;
+    if (order !== undefined) body.order = order;
+    if (parentFolder) body.parentFolder = parentFolder;
+    if (href) body.href = href;
+    if (tags) body.tags = tags;
+    if ('image' in options) body.image = options.image;
+    return await this.http.post('/admin/pages', body);
+  }
+
   async deletePage(options) {
     const { pageId, fullDelete } = options;
     if (!pageId) throw new ValidationError('pageId is required');
     const params = {};
     if (fullDelete) params.fullDelete = 'true';
     return await this.http.delete(`/admin/pages/${encodeURIComponent(pageId)}`, { params });
+  }
+
+  async restorePage(options) {
+    const { pageId } = options;
+    if (!pageId) throw new ValidationError('pageId is required');
+    return await this.http.post(`/admin/pages/${encodeURIComponent(pageId)}/restore`);
   }
 
   // ---- Invites ----
@@ -323,7 +348,7 @@ export class AdminClient {
     const params = { q: query };
     if (page) params.page = page;
     if (since) params.since = since;
-    if (showDeleted) params.showDeleted = 'true';
+    if (showDeleted) params.deleted = 'true';
     if (searchIn) {
       const types = Object.entries(searchIn)
         .filter(([, v]) => v)
