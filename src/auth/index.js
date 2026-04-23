@@ -146,12 +146,13 @@ export class AuthClient {
       }
       // Fetch fresh profile/prefs so stale JWT snapshot doesn't linger
       try {
-        const fresh = await this.http.get(`/users/${encodeURIComponent(this._user.id)}`);
-        if (fresh?.id) {
+        const fresh = await this.http.get('/auth/me');
+        const freshUser = fresh?.user;
+        if (freshUser?.id) {
           this._user = {
             ...this._user,
-            profile: fresh.profile ?? this._user.profile,
-            prefs: fresh.prefs ?? this._user.prefs,
+            profile: freshUser.profile ?? this._user.profile,
+            prefs: freshUser.prefs ?? this._user.prefs,
           };
         }
       } catch {
