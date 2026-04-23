@@ -141,6 +141,8 @@ export class ActivitiesClient {
     const object = {};
     if (patch.content !== undefined) object.source = { content: patch.content };
     if (patch.title !== undefined) object.title = patch.title;
+    if (patch.type !== undefined) object.type = patch.type;
+    if (patch.href !== undefined) object.href = patch.href;
     if (patch.tags !== undefined) object.tags = patch.tags;
     if (patch.location !== undefined) object.location = patch.location;
     if (patch.startTime !== undefined) object.startTime = patch.startTime;
