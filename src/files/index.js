@@ -58,7 +58,7 @@ export class FilesClient {
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const url = this.http._buildUrl('/files');
+    const url = this.http._buildUrl('/files/');
     const response = await fetch(url, {
       method: 'POST',
       headers,

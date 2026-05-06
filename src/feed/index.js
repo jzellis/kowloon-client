@@ -73,8 +73,22 @@ export class FeedClient {
    * @param {number} [options.page]
    * @returns {Promise<Object>}
    */
+  /**
+   * Advance the high-water mark for a circle feed (idempotent — server ignores regressions)
+   * @param {Object} options
+   * @param {string} options.circleId
+   * @param {string|Date} options.lastSeenAt - ISO string or Date of the most recent post seen
+   */
+  async markCircleSeen(options) {
+    const { circleId, lastSeenAt } = options;
+    if (!circleId) throw new ValidationError('circleId is required');
+    if (!lastSeenAt) throw new ValidationError('lastSeenAt is required');
+    const ts = lastSeenAt instanceof Date ? lastSeenAt.toISOString() : lastSeenAt;
+    return await this.http.patch(`/circles/${encodeURIComponent(circleId)}/seen`, { lastSeenAt: ts });
+  }
+
   async getCirclePosts(options) {
-    const { circleId, types, type, since, limit } = options;
+    const { circleId, types, type, before, limit } = options;
 
     if (!circleId) throw new ValidationError('circleId is required');
 
@@ -82,7 +96,7 @@ export class FeedClient {
     // Accept types (array), type (string), or neither
     const typeList = types ?? (type ? [type] : null);
     if (typeList?.length) params.types = typeList.join(',');
-    if (since) params.since = since;
+    if (before) params.before = before;
     if (limit) params.limit = limit;
 
     return await this.http.get(`/circles/${encodeURIComponent(circleId)}/posts`, { params });

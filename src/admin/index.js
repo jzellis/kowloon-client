@@ -222,7 +222,7 @@ export class AdminClient {
   }
 
   async createPage(options = {}) {
-    const { title, slug, type, summary, source, to, canReply, canReact, order, parentFolder, href, tags } = options;
+    const { title, slug, type, summary, source, to, canReply, canReact, order, parentId, href, tags } = options;
     if (!title) throw new ValidationError('title is required');
     const body = { title };
     if (slug) body.slug = slug;
@@ -233,7 +233,7 @@ export class AdminClient {
     if (canReply) body.canReply = canReply;
     if (canReact) body.canReact = canReact;
     if (order !== undefined) body.order = order;
-    if (parentFolder) body.parentFolder = parentFolder;
+    if (parentId) body.parentId = parentId;
     if (href) body.href = href;
     if (tags) body.tags = tags;
     if ('image' in options) body.image = options.image;
