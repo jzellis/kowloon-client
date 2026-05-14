@@ -179,10 +179,11 @@ export class ActivitiesClient {
    * @param {string} options.content - Reply content (Markdown)
    * @param {string} [options.mediaType] - Content media type (default: text/markdown)
    * @param {Object[]} [options.attachments]
+   * @param {string} [options.dedupeKey] - Idempotency key for retry-safe submission
    * @returns {Promise<Object>}
    */
   async reply(options) {
-    const { postId, content, mediaType = 'text/markdown', attachments } = options;
+    const { postId, content, mediaType = 'text/markdown', attachments, dedupeKey } = options;
 
     if (!postId) throw new ValidationError('postId is required');
     if (!content || typeof content !== 'string') throw new ValidationError('content is required');
@@ -193,12 +194,47 @@ export class ActivitiesClient {
     };
     if (attachments) object.attachments = attachments;
 
-    return await this._post({
+    const activity = {
       type: 'Reply',
       objectType: 'Reply',
       to: postId,
       object,
-    });
+    };
+    if (dedupeKey) activity.dedupeKey = dedupeKey;
+
+    return await this._post(activity);
+  }
+
+  /**
+   * Update a reply (author-only). Only `content` (and tags) are editable per server allowlist.
+   * @param {Object} options
+   * @param {string} options.replyId - Reply ID to update
+   * @param {string} [options.content] - New body content (Markdown)
+   * @param {string[]} [options.tags]
+   * @returns {Promise<Object>}
+   */
+  async updateReply(options) {
+    const { replyId, content, tags } = options;
+    if (!replyId) throw new ValidationError('replyId is required');
+
+    const object = {};
+    if (content !== undefined) object.source = { content };
+    if (tags !== undefined) object.tags = tags;
+
+    return await this._post({ type: 'Update', objectType: 'Reply', target: replyId, object });
+  }
+
+  /**
+   * Delete a reply (author or admin)
+   * @param {Object} options
+   * @param {string} options.replyId
+   * @returns {Promise<Object>}
+   */
+  async deleteReply(options) {
+    const { replyId } = options;
+    if (!replyId) throw new ValidationError('replyId is required to delete reply');
+
+    return await this._post({ type: 'Delete', objectType: 'Reply', target: replyId });
   }
 
   /** Alias for reply() */
@@ -208,6 +244,7 @@ export class ActivitiesClient {
       postId: options.postId || options.toItemId,
       content: options.content || options.body,
       attachments: options.attachments,
+      dedupeKey: options.dedupeKey,
     };
     return this.reply(normalized);
   }
