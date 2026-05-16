@@ -144,7 +144,8 @@ export class AuthClient {
         await this.logout();
         return null;
       }
-      // Fetch fresh profile/prefs so stale JWT snapshot doesn't linger
+      // Fetch fresh profile/prefs/admin flag so stale JWT snapshot doesn't linger.
+      // isServerAdmin is not in the JWT payload — only /auth/me carries it.
       try {
         const fresh = await this.http.get('/auth/me');
         const freshUser = fresh?.user;
@@ -153,6 +154,7 @@ export class AuthClient {
             ...this._user,
             profile: freshUser.profile ?? this._user.profile,
             prefs: freshUser.prefs ?? this._user.prefs,
+            isServerAdmin: !!freshUser.isServerAdmin,
           };
         }
       } catch {
