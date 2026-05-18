@@ -69,6 +69,7 @@ export class ActivitiesClient {
    * @param {string} [options.endTime] - ISO date (for Event type)
    * @param {Object[]} [options.attachments] - Array of { fileId, title?, alt?, description?, metadata? }
    * @param {string} [options.featuredImage] - File ID for featured image
+   * @param {string} [options.dedupeKey] - Idempotency key for retry-safe submission
    * @returns {Promise<Object>}
    */
   async createPost(options) {
@@ -80,6 +81,7 @@ export class ActivitiesClient {
       tags, tag,                // accept both; tags takes precedence
       location, startTime, endTime, attachments, featuredImage,
       target,    // ID of the post being shared (for Link-type shares)
+      dedupeKey,
     } = options;
 
     const body  = content ?? source ?? '';
@@ -117,6 +119,7 @@ export class ActivitiesClient {
     if (to) activity.to = to;
     if (canReply) activity.canReply = canReply;
     if (canReact) activity.canReact = canReact;
+    if (dedupeKey) activity.dedupeKey = dedupeKey;
 
     return await this._post(activity);
   }
@@ -548,7 +551,7 @@ export class ActivitiesClient {
     const {
       type = 'Bookmark', href, title, parentFolder, to,
       canReply = 'public', canReact = 'public',
-      body, image, featuredImage, tags,
+      body, image, featuredImage, tags, dedupeKey,
     } = options;
 
     if (!title) throw new ValidationError('Bookmark title is required');
@@ -567,6 +570,7 @@ export class ActivitiesClient {
     if (to) activity.to = to;
     activity.canReply = canReply;
     activity.canReact = canReact;
+    if (dedupeKey) activity.dedupeKey = dedupeKey;
 
     return await this._post(activity);
   }
