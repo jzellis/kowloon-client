@@ -51,10 +51,12 @@ export class AuthClient {
    * @param {string} credentials.password - Password
    * @param {string} [credentials.email] - Email (optional)
    * @param {Object} [credentials.profile] - Profile data (optional)
+   * @param {string} [credentials.inviteCode] - Invite code (when registration is closed)
+   * @param {string[]} [credentials.acknowledgedRules] - IDs of every server rule the user ticked off
    * @returns {Promise<Object>} { user, token }
    */
   async register(credentials) {
-    const { username, password, email, profile, inviteCode } = credentials;
+    const { username, password, email, profile, inviteCode, acknowledgedRules } = credentials;
 
     if (!username || !password) {
       throw new AuthenticationError('Username and password are required');
@@ -66,6 +68,7 @@ export class AuthClient {
       email,
       profile,
       inviteCode,
+      acknowledgedRules,
     });
 
     if (!response.token) {
