@@ -24,6 +24,19 @@ export class FeedClient {
     return await this.http.get('/');
   }
 
+  /**
+   * Fetch a link preview (OpenGraph / link-preview-js) for an external URL.
+   * Server-side SSRF guard rejects loopback / private hosts.
+   * @param {Object} options
+   * @param {string} options.url - The URL to preview
+   * @returns {Promise<Object>} { url, title, summary, contentType, image, favicon }
+   */
+  async getLinkPreview(options) {
+    const { url } = options;
+    if (!url) throw new ValidationError('url is required');
+    return await this.http.get('/preview', { params: { url } });
+  }
+
   // ---- Content Feeds ----
 
   /**
