@@ -32,17 +32,21 @@ export class FeedClient {
    * @param {string} options.serverId - Server ID or domain
    * @param {string} [options.type] - Single post type filter (Note, Article, etc.)
    * @param {string[]} [options.types] - Multi post type filter; sent as comma-separated `type` param
+   * @param {'public'|'server'} [options.to] - Restrict to a single visibility tier.
+   *   Omitted = default merged view (public + server for authed local users).
+   *   'public' = public firehose only. 'server' = server-only (requires local auth).
    * @param {number} [options.page] - Page number
    * @param {string} [options.since] - ISO date cursor
    * @returns {Promise<Object>}
    */
   async getServerPosts(options = {}) {
-    const { serverId, type, types, page, since } = options;
+    const { serverId, type, types, to, page, since } = options;
 
     const params = {};
     if (serverId) params.serverId = serverId;
     if (types && types.length) params.type = types.join(',');
     else if (type) params.type = type;
+    if (to) params.to = to;
     if (page) params.page = page;
     if (since) params.since = since;
 
