@@ -589,15 +589,25 @@ export class ActivitiesClient {
     if (updates.type !== undefined) object.type = updates.type;
     if (updates.href !== undefined) object.href = updates.href;
     if (updates.title !== undefined) object.title = updates.title;
-    if (updates.parentId !== undefined) object.parentId = updates.parentId;
-    if (updates.body !== undefined) object.content = updates.body;
-    if (updates.icon !== undefined) object.icon = updates.icon;
-    if (updates.featuredImage !== undefined) object.featuredImage = updates.featuredImage;
+    if (updates.summary !== undefined) object.summary = updates.summary;
+    if (updates.tags !== undefined) object.tags = updates.tags;
+    // Move into/out of a folder. null/empty string → move to root.
+    if (updates.parentFolder !== undefined) {
+      object.parentFolder = updates.parentFolder || null;
+    }
+    if (updates.image !== undefined || updates.featuredImage !== undefined) {
+      object.image = updates.image ?? updates.featuredImage;
+    }
+    // Body is stored under source.content; server pre-render handles HTML.
+    if (updates.body !== undefined) {
+      object.source = { content: updates.body, mediaType: 'text/markdown' };
+    }
+    // Visibility + interaction fields go into object (Update reads from patch)
+    if (updates.to !== undefined) object.to = updates.to;
+    if (updates.canReply !== undefined) object.canReply = updates.canReply;
+    if (updates.canReact !== undefined) object.canReact = updates.canReact;
 
     const activity = { type: 'Update', objectType: 'Bookmark', target: bookmarkId, object };
-    if (updates.to !== undefined) activity.to = updates.to;
-    if (updates.canReact !== undefined) activity.canReact = updates.canReact;
-
     return await this._post(activity);
   }
 
