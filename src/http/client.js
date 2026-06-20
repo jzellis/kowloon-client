@@ -38,6 +38,7 @@ export class HttpClient {
   async _buildHeaders(customHeaders = {}) {
     const headers = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       ...this.defaultHeaders,
       ...customHeaders,
     };
