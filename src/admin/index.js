@@ -341,6 +341,34 @@ export class AdminClient {
     return await this.http.get('/admin/system');
   }
 
+  async getAdmins() {
+    return await this.http.get('/admin/system/admins');
+  }
+
+  async addAdmin({ userId }) {
+    if (!userId) throw new ValidationError('userId is required');
+    return await this.http.post('/admin/system/admins', { userId });
+  }
+
+  async removeAdmin({ userId }) {
+    if (!userId) throw new ValidationError('userId is required');
+    return await this.http.delete(`/admin/system/admins/${encodeURIComponent(userId)}`);
+  }
+
+  async getMods() {
+    return await this.http.get('/admin/system/mods');
+  }
+
+  async addMod({ userId }) {
+    if (!userId) throw new ValidationError('userId is required');
+    return await this.http.post('/admin/system/mods', { userId });
+  }
+
+  async removeMod({ userId }) {
+    if (!userId) throw new ValidationError('userId is required');
+    return await this.http.delete(`/admin/system/mods/${encodeURIComponent(userId)}`);
+  }
+
   async backup() {
     return await this.http.get('/admin/system/backup');
   }
