@@ -341,6 +341,10 @@ export class AdminClient {
     return await this.http.get('/admin/system');
   }
 
+  async backup() {
+    return await this.http.get('/admin/system/backup');
+  }
+
   async adminSearch(options) {
     const { query, page, since, showDeleted, searchIn } = options;
     if (!query) throw new ValidationError('query is required');
