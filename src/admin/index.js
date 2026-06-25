@@ -373,6 +373,56 @@ export class AdminClient {
     return await this.http.get('/admin/system/backup');
   }
 
+  async getLogs(options = {}) {
+    const { tail = 200, level = 'all' } = options;
+    return await this.http.get('/admin/system/logs', { params: { tail, level } });
+  }
+
+  // ---- Backup / Restore ----
+
+  async createBackup() {
+    return await this.http.post('/admin/backup');
+  }
+
+  async listBackups() {
+    return await this.http.get('/admin/backup');
+  }
+
+  async getBackupJob(jobId) {
+    if (!jobId) throw new ValidationError('jobId is required');
+    return await this.http.get(`/admin/backup/${encodeURIComponent(jobId)}`);
+  }
+
+  async deleteBackup(jobId) {
+    if (!jobId) throw new ValidationError('jobId is required');
+    return await this.http.delete(`/admin/backup/${encodeURIComponent(jobId)}`);
+  }
+
+  backupDownloadUrl(jobId) {
+    if (!jobId) throw new ValidationError('jobId is required');
+    const base = this.http.baseUrl?.replace(/\/$/, '') || '';
+    return `${base}/admin/backup/${encodeURIComponent(jobId)}/download`;
+  }
+
+  async restoreFromFile(file) {
+    if (!file) throw new ValidationError('file is required');
+    const formData = new FormData();
+    formData.append('archive', file, file.name || 'archive.tar.gz');
+
+    // Raw fetch — HttpClient always JSON.stringifies the body, which doesn't work for FormData
+    const token = await this.http.getToken();
+    const url = this.http._buildUrl('/admin/backup/restore');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(url, { method: 'POST', headers, body: formData });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error || `Restore failed with status ${response.status}`);
+    }
+    return await response.json();
+  }
+
   async adminSearch(options) {
     const { query, page, since, showDeleted, searchIn } = options;
     if (!query) throw new ValidationError('query is required');
