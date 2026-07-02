@@ -425,12 +425,13 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async createGroup(options) {
-    const { name, description, location, icon, to, membershipPolicy, rsvpPolicy } = options;
+    const { name, description, location, icon, image, to, membershipPolicy, rsvpPolicy } = options;
     if (!name || typeof name !== 'string') throw new ValidationError('Group name is required');
 
     const object = { type: 'Group', name, description: description || '' };
     if (location) object.location = location;
     if (icon) object.icon = icon;
+    if (image) object.image = image;
     const policy = rsvpPolicy || membershipPolicy;
     if (policy) object.rsvpPolicy = policy;
 
@@ -448,7 +449,7 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async updateGroup(options) {
-    const { groupId, name, description, location, icon, to, membershipPolicy } = options;
+    const { groupId, name, description, location, icon, image, to, membershipPolicy } = options;
     if (!groupId) throw new ValidationError('groupId is required');
 
     const object = {};
@@ -456,6 +457,7 @@ export class ActivitiesClient {
     if (description !== undefined) object.description = description;
     if (location !== undefined) object.location = location;
     if (icon !== undefined) object.icon = icon;
+    if (image !== undefined) object.image = image;
     if (membershipPolicy !== undefined) object.rsvpPolicy = membershipPolicy;
 
     const activity = { type: 'Update', objectType: 'Group', target: groupId, object };
