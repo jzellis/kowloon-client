@@ -272,6 +272,41 @@ export class FeedClient {
     return await this.http.get('/circles/browse', { params });
   }
 
+  // ---- Remote Server Browsing ----
+
+  /**
+   * List remote Kowloon servers known to this server.
+   * @param {Object} [options]
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @param {'name'|'discoveredAt'} [options.sort] - Default: discoveredAt (newest first)
+   * @returns {Promise<Object>} OrderedCollection of server profiles
+   */
+  async getServers(options = {}) {
+    const { page, limit, sort } = options;
+    const params = {};
+    if (page)  params.page  = page;
+    if (limit) params.limit = limit;
+    if (sort)  params.sort  = sort;
+    return await this.http.get('/servers', { params });
+  }
+
+  /**
+   * Get the cached profile for a specific remote server, fetching fresh
+   * data if the cache is stale.
+   * @param {Object} options
+   * @param {string} options.domain - Remote server domain (e.g. "kowloon.network")
+   * @param {boolean} [options.refresh=false] - Force a fresh fetch regardless of cache age
+   * @returns {Promise<Object>} FederatedServer profile including cachedCircles, cachedGroups, cachedPages
+   */
+  async getServer(options) {
+    const { domain, refresh } = options;
+    if (!domain) throw new ValidationError('domain is required');
+    const params = {};
+    if (refresh) params.refresh = 'true';
+    return await this.http.get(`/servers/${encodeURIComponent(domain)}`, { params });
+  }
+
   /**
    * Get a single circle by ID (owner-only for user circles)
    * @param {Object} options
