@@ -344,10 +344,9 @@ export class ActivitiesClient {
     if (description !== undefined) object.summary = description;
     if (icon !== undefined) object.icon = icon;
 
-    const activity = { type: 'Update', objectType: 'Circle', target: circleId, object };
-    if (to !== undefined) activity.to = to;
+    if (to !== undefined) object.to = to;
 
-    return await this._post(activity);
+    return await this._post({ type: 'Update', objectType: 'Circle', target: circleId, object });
   }
 
   /**
