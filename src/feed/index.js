@@ -231,9 +231,8 @@ export class FeedClient {
   }
 
   /**
-   * Browse public/server-visible groups with sorting.
+   * List public/server-visible groups.
    * @param {Object} [options]
-   * @param {'date'|'popular'} [options.sort] - Sort order: 'date' (default) or 'popular'
    * @param {number} [options.page]
    * @param {number} [options.limit]
    * @returns {Promise<Object>}
@@ -244,15 +243,6 @@ export class FeedClient {
     if (limit) params.limit = limit;
     if (page) params.page = page;
     return await this.http.get('/groups', { params });
-  }
-
-  async browseGroups(options = {}) {
-    const { sort, page, limit } = options;
-    const params = {};
-    if (sort === 'popular') params.sort = 'popular';
-    if (page) params.page = page;
-    if (limit) params.limit = limit;
-    return await this.http.get('/groups/browse', { params });
   }
 
   /**
