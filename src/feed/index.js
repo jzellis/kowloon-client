@@ -364,6 +364,26 @@ export class FeedClient {
   }
 
   /**
+   * Get a user's group memberships (groups they belong to). Owner sees all;
+   * others see only groups visible to them (@public + server/shared-circle).
+   * @param {Object} options
+   * @param {string} options.userId
+   * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @returns {Promise<Object>}
+   */
+  async getUserGroups(options) {
+    const { userId, page, limit } = options;
+    if (!userId) throw new ValidationError('userId is required');
+
+    const params = {};
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+
+    return await this.http.get(`/users/${encodeURIComponent(userId)}/groups`, { params });
+  }
+
+  /**
    * Get bookmarks belonging to a user
    * @param {Object} options
    * @param {string} options.userId
