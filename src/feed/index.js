@@ -263,11 +263,6 @@ export class FeedClient {
     return await this.http.get('/circles', { params });
   }
 
-  /** @deprecated Alias for getCircles(); /circles/browse folded into /circles. */
-  async browseCircles(options = {}) {
-    return this.getCircles(options);
-  }
-
   // ---- Remote Server Browsing ----
 
   /**
