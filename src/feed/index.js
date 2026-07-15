@@ -444,19 +444,26 @@ export class FeedClient {
     return await this.http.get(`/posts/${encodeURIComponent(postId)}/reacts`, { params });
   }
 
-  // ---- User Lookup / Search ----
+  // ---- Lookup / Search ----
 
   /**
-   * Resolve a user by full handle, including remote users via server-side WebFinger fetch.
-   * Auth required — server proxies the outbound request.
+   * Resolve ANY object by its Kowloon id — local, cached, or fetched fresh from a
+   * remote server (hydrated + cached). Works for users, posts, circles, groups.
+   * Auth required — the server proxies the outbound fetch. The local→remote
+   * counterpart of /resolve. (Servers: use getServer() / GET /servers/:domain.)
    * @param {Object} options
-   * @param {string} options.id - Full handle e.g. "@bob@kwln2.local" or local "@alice@kwln.org"
-   * @returns {Promise<Object>} { item: userProfile }
+   * @param {string} options.id - e.g. "@bob@kwln2.local", "post:abc@kwln2.local"
+   * @returns {Promise<Object>} { item }
    */
-  async lookupUser(options) {
+  async lookup(options) {
     const { id } = options;
     if (!id) throw new ValidationError('id is required');
-    return await this.http.get('/users/lookup', { params: { id } });
+    return await this.http.get('/lookup', { params: { id } });
+  }
+
+  /** @deprecated Use lookup() — /users/lookup folded into the generic /lookup. */
+  async lookupUser(options) {
+    return this.lookup(options);
   }
 
   /**
