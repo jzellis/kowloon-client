@@ -246,20 +246,26 @@ export class FeedClient {
   }
 
   /**
-   * Browse public/server-visible circles with sorting.
+   * List all circles visible to the viewer (public + viewer-scoped), sortable.
+   * A user's OWN circles are getUserCircles() / GET /users/:id/circles.
    * @param {Object} [options]
    * @param {'date'|'reacts'} [options.sort] - Sort order: 'date' (default) or 'reacts'
    * @param {number} [options.page]
    * @param {number} [options.limit]
    * @returns {Promise<Object>}
    */
-  async browseCircles(options = {}) {
+  async getCircles(options = {}) {
     const { sort, page, limit } = options;
     const params = {};
-    if (sort === 'reacts') params.sort = 'reacts';
+    if (sort) params.sort = sort;
     if (page) params.page = page;
     if (limit) params.limit = limit;
-    return await this.http.get('/circles/browse', { params });
+    return await this.http.get('/circles', { params });
+  }
+
+  /** @deprecated Alias for getCircles(); /circles/browse folded into /circles. */
+  async browseCircles(options = {}) {
+    return this.getCircles(options);
   }
 
   // ---- Remote Server Browsing ----
