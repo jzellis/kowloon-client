@@ -263,6 +263,15 @@ export class FeedClient {
     return await this.http.get('/circles', { params });
   }
 
+  /**
+   * Get the server's curated Discover shelves. Viewer-aware: authenticated
+   * local users get public + server-tier items, everyone else public only.
+   * @returns {Promise<Object>} { type, sections: [{ id, name, summary, items }] }
+   */
+  async getRecommendations() {
+    return await this.http.get('/recommendations');
+  }
+
   // ---- Remote Server Browsing ----
 
   /**

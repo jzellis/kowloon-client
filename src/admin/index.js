@@ -254,6 +254,69 @@ export class AdminClient {
     return await this.http.post(`/admin/pages/${encodeURIComponent(pageId)}/restore`);
   }
 
+  // ---- Discover: recommendation shelves ----
+
+  async getSections(options = {}) {
+    return await this.http.get('/admin/sections', { params: this._listParams(options) });
+  }
+
+  async createSection(options = {}) {
+    const { name, summary, order, to, active } = options;
+    if (!name) throw new ValidationError('name is required');
+    const body = { name };
+    if (summary !== undefined) body.summary = summary;
+    if (order !== undefined) body.order = order;
+    if (to) body.to = to;
+    if (active !== undefined) body.active = active;
+    return await this.http.post('/admin/sections', body);
+  }
+
+  async updateSection(options) {
+    const { sectionId, updates } = options;
+    if (!sectionId) throw new ValidationError('sectionId is required');
+    return await this.http.patch(`/admin/sections/${encodeURIComponent(sectionId)}`, updates);
+  }
+
+  async deleteSection(options) {
+    const { sectionId, fullDelete } = options;
+    if (!sectionId) throw new ValidationError('sectionId is required');
+    const params = {};
+    if (fullDelete) params.fullDelete = 'true';
+    return await this.http.delete(`/admin/sections/${encodeURIComponent(sectionId)}`, { params });
+  }
+
+  async getRecommendations(options = {}) {
+    const { section, refType, ...rest } = options;
+    const params = this._listParams(rest);
+    if (section) params.section = section;
+    if (refType) params.refType = refType;
+    return await this.http.get('/admin/recommendations', { params });
+  }
+
+  async addRecommendation(options = {}) {
+    const { ref, section, note, order } = options;
+    if (!ref) throw new ValidationError('ref is required');
+    if (!section) throw new ValidationError('section is required');
+    const body = { ref, section };
+    if (note !== undefined) body.note = note;
+    if (order !== undefined) body.order = order;
+    return await this.http.post('/admin/recommendations', body);
+  }
+
+  async updateRecommendation(options) {
+    const { recommendationId, updates } = options;
+    if (!recommendationId) throw new ValidationError('recommendationId is required');
+    return await this.http.patch(`/admin/recommendations/${encodeURIComponent(recommendationId)}`, updates);
+  }
+
+  async removeRecommendation(options) {
+    const { recommendationId, fullDelete } = options;
+    if (!recommendationId) throw new ValidationError('recommendationId is required');
+    const params = {};
+    if (fullDelete) params.fullDelete = 'true';
+    return await this.http.delete(`/admin/recommendations/${encodeURIComponent(recommendationId)}`, { params });
+  }
+
   // ---- Invites ----
 
   async createInvite(options = {}) {
