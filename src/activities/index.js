@@ -264,13 +264,21 @@ export class ActivitiesClient {
     const { postId, emoji, name } = options;
 
     if (!postId) throw new ValidationError('postId is required');
-    if (!emoji || typeof emoji !== 'string') throw new ValidationError('emoji is required');
+
+    // A user has ONE reaction per target. A non-empty emoji sets/replaces it;
+    // an empty/omitted emoji clears it. For the clear case we deliberately omit
+    // the object `type` field so the server reads no emoji (its emoji fallback
+    // would otherwise pick up "React").
+    const setting = !!emoji && typeof emoji === 'string';
+    const object = setting
+      ? { type: 'React', emoji, name: name || emoji }
+      : { emoji: '' };
 
     return await this._post({
       type: 'React',
       objectType: 'React',
       to: postId,
-      object: { type: 'React', emoji, name: name || emoji },
+      object,
     });
   }
 
