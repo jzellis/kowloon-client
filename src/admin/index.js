@@ -320,13 +320,18 @@ export class AdminClient {
   // ---- Invites ----
 
   async createInvite(options = {}) {
-    const { type, recipient, amount, expiresAt } = options;
+    // Field names must match the server (routes/admin/invites.js): email +
+    // maxRedemptions, not the old recipient/amount, which were silently dropped
+    // — so individual invites lost their email and the server rejected them.
+    const { type, email, maxRedemptions, expiresAt, note, welcomeMessage } = options;
 
     const body = {};
     if (type) body.type = type;
-    if (recipient) body.recipient = recipient;
-    if (amount) body.amount = amount;
+    if (email) body.email = email;
+    if (maxRedemptions != null) body.maxRedemptions = maxRedemptions;
     if (expiresAt) body.expiresAt = expiresAt;
+    if (note) body.note = note;
+    if (welcomeMessage) body.welcomeMessage = welcomeMessage;
 
     return await this.http.post('/admin/invites', body);
   }
