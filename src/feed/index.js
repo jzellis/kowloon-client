@@ -201,7 +201,20 @@ export class FeedClient {
     const { userId } = options;
     if (!userId) throw new ValidationError('userId is required');
 
-    return await this.http.get(`/users/${encodeURIComponent(userId)}`);
+    try {
+      return await this.http.get(`/users/${encodeURIComponent(userId)}`);
+    } catch (err) {
+      // GET /users/:id is local-only. A federated handle (@name@remote-domain)
+      // isn't in the local users collection, so it 404s -- fall back to /lookup,
+      // which fetches and hydrates the remote actor and returns the same
+      // { item } shape. Only retry for remote-looking ids to avoid masking real
+      // 404s for local users.
+      const isRemoteHandle = /^@[^@/]+@[^@/]+$/.test(userId);
+      if (err?.statusCode === 404 && isRemoteHandle) {
+        return await this.lookup({ id: userId });
+      }
+      throw err;
+    }
   }
 
   /**
