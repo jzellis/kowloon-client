@@ -24,7 +24,7 @@ export class KowloonClient {
    * @param {number} [options.timeout] - Request timeout in ms (default: 30000)
    */
   constructor(options = {}) {
-    const { baseUrl, storage, headers, timeout } = options;
+    const { baseUrl, storage, headers, timeout, onUnauthorized } = options;
 
     if (!baseUrl) {
       throw new Error('baseUrl is required');
@@ -39,6 +39,7 @@ export class KowloonClient {
       getToken: () => this.auth.getToken(),
       headers,
       timeout,
+      onUnauthorized,
     });
 
     // Auth client

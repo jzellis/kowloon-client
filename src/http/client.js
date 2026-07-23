@@ -19,6 +19,10 @@ export class HttpClient {
     this.getToken = options.getToken || (() => null);
     this.defaultHeaders = options.headers || {};
     this.timeout = options.timeout || 30000;
+    // Called when a request that CARRIED a token still comes back 401 — i.e. the
+    // session expired. Lets the host app clear stale auth and send the user to
+    // login instead of surfacing a raw "Authentication required" error.
+    this.onUnauthorized = options.onUnauthorized || null;
   }
 
   /**
@@ -117,6 +121,14 @@ export class HttpClient {
 
     if (!response.ok) {
       const errorMessage = body?.error || body?.message || response.statusText || 'Request failed';
+
+      // Session expired: a request that sent a token got 401 back. Notify the
+      // host so it can log out + redirect, rather than showing a raw error while
+      // the UI still thinks it's logged in (#57). Only fire when a token was
+      // actually attached — an anonymous 401 is a normal "please log in" case.
+      if (response.status === 401 && options?.headers?.Authorization && this.onUnauthorized) {
+        try { this.onUnauthorized(); } catch { /* never let the hook mask the error */ }
+      }
 
       throw createErrorFromStatus(response.status, errorMessage, {
         response: body,
