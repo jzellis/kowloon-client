@@ -142,16 +142,18 @@ export const PREFS = [
     default: "",
   },
   {
-    key: "theme",
+    // Language: only English exists today, but the control is shown so people
+    // can see more are coming. New languages get added to `options` as Kowloon
+    // is translated (i18n itself is a pre-beta task). NOTE: `theme` is
+    // intentionally NOT in this manifest — mobile has no dark mode yet, and the
+    // web frontend sets its theme through its own screen.
+    key: "lang",
     group: "general",
     type: "select",
-    label: "Theme",
-    options: [
-      { value: "system", label: "System" },
-      { value: "light", label: "Light" },
-      { value: "dark", label: "Dark" },
-    ],
-    default: "system",
+    label: "Language",
+    hint: "English only for now — more will appear here as Kowloon is translated.",
+    options: [{ value: "en", label: "English" }],
+    default: "en",
   },
 ];
 
