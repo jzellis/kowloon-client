@@ -237,10 +237,13 @@ export class FeedClient {
    * @returns {Promise<Object>}
    */
   async getPage(options) {
-    const { pageId } = options;
+    const { pageId, domain } = options;
     if (!pageId) throw new ValidationError('pageId is required');
 
-    return await this.http.get(`/pages/${encodeURIComponent(pageId)}`);
+    // A remote `domain` server-hydrates the page from that origin Kowloon
+    // server (a cached shadow); omit it for local pages.
+    const qs = domain ? `?domain=${encodeURIComponent(domain)}` : '';
+    return await this.http.get(`/pages/${encodeURIComponent(pageId)}${qs}`);
   }
 
   /**
