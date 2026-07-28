@@ -21,7 +21,6 @@ export const PREF_GROUPS = [
   { key: "composing", label: "Composing" },
   { key: "feed", label: "Feed" },
   { key: "notifications", label: "Notifications" },
-  { key: "general", label: "General" },
 ];
 
 const POST_TYPE_OPTIONS = [
@@ -133,15 +132,11 @@ export const PREFS = [
   },
 
   // General
-  {
-    key: "timezone",
-    group: "general",
-    type: "timezone",
-    label: "Time zone",
-    hint: "Used to show event and post times in your local time.",
-    default: "",
-  },
   // Deliberately NOT in this manifest:
+  // - `timezone`: dates already render in the viewer's device zone (Intl with no
+  //   timeZone), so per-viewer times are correct automatically — a per-user zone
+  //   override is redundant. (Venue-local *event* times, if ever wanted, need a
+  //   per-EVENT zone, not a user pref.)
   // - `theme`: mobile has no dark mode yet; the web frontend sets its theme via
   //   its own screen.
   // - `lang`: the app auto-detects language from the OS (expo-localization on
