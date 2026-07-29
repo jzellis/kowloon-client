@@ -4,7 +4,7 @@ import { ValidationError } from '../utils/errors.js';
 
 /**
  * Search client — all methods use GET /search
- * Searchable types: posts, pages, groups, users, bookmarks
+ * Searchable types: posts, pages, groups, users, bookmarks, servers
  */
 export class SearchClient {
   /**
@@ -21,7 +21,7 @@ export class SearchClient {
    * @param {number} [options.page]
    * @param {string} [options.type] - Sub-type filter (e.g. Note, Article for posts)
    * @param {string} [options.since] - ISO date cursor
-   * @param {Object} [options.searchIn] - { posts?, pages?, groups?, users?, bookmarks? }
+   * @param {Object} [options.searchIn] - { posts?, pages?, groups?, users?, bookmarks?, servers? }
    * @returns {Promise<Object>}
    */
   async search(options) {
@@ -96,6 +96,21 @@ export class SearchClient {
    */
   async searchPages(options) {
     return this.search({ ...options, searchIn: { pages: true } });
+  }
+
+  /**
+   * Search known (cached) federated servers by partial domain or name.
+   * A leading "@" is optional — "@kwln" and "kwln" both match any cached
+   * server whose domain/name contains that substring. This is local-only:
+   * it reads THIS server's FederatedServer cache, it does not crawl the
+   * network. To look up a specific server live (even if uncached) use the
+   * feed client's getServer({ domain }).
+   * @param {Object} options
+   * @param {string} options.query
+   * @param {number} [options.page]
+   */
+  async searchServers(options) {
+    return this.search({ ...options, searchIn: { servers: true } });
   }
 }
 
