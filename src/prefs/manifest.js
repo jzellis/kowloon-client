@@ -18,9 +18,20 @@
 //   timezone     — an IANA time zone; platform supplies the picker
 
 export const PREF_GROUPS = [
+  { key: "general", label: "General" },
   { key: "composing", label: "Composing" },
   { key: "feed", label: "Feed" },
   { key: "notifications", label: "Notifications" },
+];
+
+// Home-screen options are tab route slugs so the client can route straight to
+// them on launch. `adminOnly` options are shown only to server admins (the
+// renderer filters them). Extend this list as new launchable screens appear.
+const HOME_SCREEN_OPTIONS = [
+  { value: "discover", label: "Discover" },
+  { value: "feed", label: "Feed" },
+  { value: "search", label: "Search" },
+  { value: "admin", label: "Admin", adminOnly: true },
 ];
 
 const POST_TYPE_OPTIONS = [
@@ -32,6 +43,17 @@ const POST_TYPE_OPTIONS = [
 ];
 
 export const PREFS = [
+  // General
+  {
+    key: "defaultHomeScreen",
+    group: "general",
+    type: "select",
+    label: "Home screen",
+    hint: "Which screen opens when you launch the app.",
+    options: HOME_SCREEN_OPTIONS,
+    default: "discover",
+  },
+
   // Composing
   {
     key: "defaultPostType",
