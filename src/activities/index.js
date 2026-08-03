@@ -176,9 +176,15 @@ export class ActivitiesClient {
   // ---- Replies & Reactions ----
 
   /**
-   * Reply to a post or page
+   * Reply to a post, page, or another reply.
+   *
+   * Threading is two levels deep (Facebook-style): reply to a post for a
+   * first-level reply, or pass `inReplyTo` (a reply ID) to answer a first-level
+   * reply. The server derives the root post and caps depth at 2 (a reply to a
+   * second-level reply flattens onto its first-level ancestor).
    * @param {Object} options
-   * @param {string} options.postId - ID of the item to reply to
+   * @param {string} options.postId - ID of the post/page being discussed
+   * @param {string} [options.inReplyTo] - ID of a reply to answer (for threading)
    * @param {string} options.content - Reply content (Markdown)
    * @param {string} [options.mediaType] - Content media type (default: text/markdown)
    * @param {Object[]} [options.attachments]
@@ -186,9 +192,12 @@ export class ActivitiesClient {
    * @returns {Promise<Object>}
    */
   async reply(options) {
-    const { postId, content, mediaType = 'text/markdown', attachments, dedupeKey } = options;
+    const { postId, inReplyTo, content, mediaType = 'text/markdown', attachments, dedupeKey } = options;
 
-    if (!postId) throw new ValidationError('postId is required');
+    // `to` is whatever is being answered directly — a first-level reply targets
+    // the post; a threaded reply targets the reply it answers.
+    const to = inReplyTo || postId;
+    if (!to) throw new ValidationError('postId (or inReplyTo) is required');
     if (!content || typeof content !== 'string') throw new ValidationError('content is required');
 
     const object = {
@@ -200,7 +209,7 @@ export class ActivitiesClient {
     const activity = {
       type: 'Reply',
       objectType: 'Reply',
-      to: postId,
+      to,
       object,
     };
     if (dedupeKey) activity.dedupeKey = dedupeKey;
