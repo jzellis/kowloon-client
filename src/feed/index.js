@@ -377,14 +377,20 @@ export class FeedClient {
    * @param {Object} options
    * @param {string} options.userId
    * @param {number} [options.page]
+   * @param {number} [options.limit]
+   * @param {string} [options.contains] - Owner-only: a member ID to test against.
+   *   When set, each returned circle gets a boolean `contains` field indicating
+   *   whether that member is already in it (used to pre-mark "Add to circle").
    * @returns {Promise<Object>}
    */
   async getUserCircles(options) {
-    const { userId, page } = options;
+    const { userId, page, limit, contains } = options;
     if (!userId) throw new ValidationError('userId is required');
 
     const params = {};
     if (page) params.page = page;
+    if (limit) params.limit = limit;
+    if (contains) params.contains = contains;
 
     return await this.http.get(`/users/${encodeURIComponent(userId)}/circles`, { params });
   }
