@@ -745,6 +745,25 @@ export class ActivitiesClient {
   }
 
   /**
+   * Set the feed-selector pins. Pass the FULL ordered arrays of Kowloon IDs
+   * (circle:…@domain / group:…@domain, first = topmost); only the axes you pass
+   * are updated. Persists to prefs.pinnedCircles / prefs.pinnedGroups.
+   * @param {Object} pins
+   * @param {string[]} [pins.circles]
+   * @param {string[]} [pins.groups]
+   * @returns {Promise<Object>}
+   */
+  async setPins({ circles, groups } = {}) {
+    const prefs = {};
+    if (Array.isArray(circles)) prefs.pinnedCircles = circles;
+    if (Array.isArray(groups)) prefs.pinnedGroups = groups;
+    if (!Object.keys(prefs).length) {
+      throw new ValidationError('setPins requires a circles or groups array');
+    }
+    return await this.updateProfile({ updates: { prefs } });
+  }
+
+  /**
    * Follow a user — adds them to the current user's Following circle
    * @param {Object} options
    * @param {string} options.userId - User ID or @handle to follow

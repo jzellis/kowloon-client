@@ -87,6 +87,7 @@ export { NotificationsClient } from './notifications/index.js';
 export { ThemesClient } from './themes/index.js';
 export { AdminClient } from './admin/index.js';
 export * from './prefs/manifest.js';
+export * from './prefs/pins.js';
 export * from './embeds/index.js';
 export * from './utils/errors.js';
 export * from './utils/storage.js';
