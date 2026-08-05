@@ -27,6 +27,15 @@ import youtube from "./providers/youtube.js";
 // Order matters only if two providers could claim the same host (none do yet).
 const PROVIDERS = [youtube];
 
+// User-Agent for playing embeds inside a native WebView (mobile). Android's
+// System WebView advertises a "wv" token that some providers (YouTube) treat as
+// an unsupported context and answer with "video unavailable"; presenting as a
+// normal browser fixes it. The web frontend doesn't need this (it IS a browser).
+// If a provider ever starts rejecting old browsers, bump the Chrome version here
+// — this is the single place that string lives.
+export const EMBED_WEBVIEW_USER_AGENT =
+  "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36";
+
 /**
  * Resolve a URL to a rich-media embed descriptor, or null if no provider
  * recognizes it (in which case it should render as an ordinary link).
