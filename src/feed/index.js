@@ -151,7 +151,7 @@ export class FeedClient {
    * @returns {Promise<Object>}
    */
   async getUserPosts(options) {
-    const { userId, type, page, since } = options;
+    const { userId, type, page, since, sort } = options;
 
     if (!userId) throw new ValidationError('userId is required');
 
@@ -159,6 +159,7 @@ export class FeedClient {
     if (type) params.type = type;
     if (page) params.page = page;
     if (since) params.since = since;
+    if (sort) params.sort = sort;
 
     return await this.http.get(`/users/${encodeURIComponent(userId)}/posts`, { params });
   }
